@@ -1,0 +1,25 @@
+{
+  "groups": [
+    {
+      "name": "hubs",
+      "servers": ["hub0"],
+      "balanceStrategy": "HIGHEST",
+      "command": {
+        "label": "hub",
+        "aliases": ["root"]
+      }
+    },
+    {
+      "name": "bedwars_lobbies",
+      "servers": ["bwlobby0"],
+      "balanceStrategy": "HIGHEST",
+      "parent": "hubs",
+      "command": {
+        "label": "bedwars",
+        "aliases": ["bw"]
+      }
+    }
+  ],
+  "rootGroup": "hubs",
+  "initialGroup": "hubs"
+}
