@@ -1,19 +1,24 @@
 package me.theseems.velope.algo;
 
-import com.google.inject.Inject;
 import com.velocitypowered.api.proxy.server.ServerInfo;
 import me.theseems.velope.Velope;
 import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.status.ServerStatus;
-import me.theseems.velope.status.ServerStatusRepository;
 
 import java.util.Optional;
 
 public enum BalanceStrategy {
     FIRST(server -> server.getGroup().stream().findFirst()),
     HIGHEST(server -> {
-        ServerInfo result = null;
-        long maxAmount = -1;
+        if (server == null || server.getGroup().isEmpty()) {
+            return Optional.empty();
+        }
+
+        ServerInfo result = server.getGroup().get(0);
+        long maxAmount = Velope.getStatusRepository()
+                .getStatus(result.getName())
+                .map(ServerStatus::getPlayerCount)
+                .orElse(-1L);
 
         for (ServerInfo serverInfo : server.getGroup()) {
             Optional<ServerStatus> optionalServerStatus =
@@ -24,13 +29,13 @@ public enum BalanceStrategy {
             }
 
             ServerStatus status = optionalServerStatus.get();
-            if (status.getPlayerCount() > maxAmount) {
+            if (status.getPlayerCount() > maxAmount && status.getPlayerCount() + 1 <= status.getMaxPlayerCount()) {
                 maxAmount = status.getPlayerCount();
                 result = serverInfo;
             }
         }
 
-        return Optional.ofNullable(result);
+        return Optional.of(result);
     });
 
     public interface BaseBalanceStrategy {
