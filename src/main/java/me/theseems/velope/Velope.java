@@ -4,7 +4,6 @@ import com.google.common.io.Files;
 import com.google.gson.Gson;
 import com.google.inject.*;
 import com.google.inject.name.Names;
-import com.velocitypowered.api.command.Command;
 import com.velocitypowered.api.command.CommandManager;
 import com.velocitypowered.api.command.CommandMeta;
 import com.velocitypowered.api.command.SimpleCommand;
@@ -12,7 +11,6 @@ import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
-import com.velocitypowered.api.proxy.ConnectionRequestBuilder;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.ServerConnection;
@@ -43,12 +41,9 @@ import org.slf4j.Logger;
 
 import java.io.*;
 import java.net.InetSocketAddress;
-import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static me.theseems.velope.utils.ConnectionUtils.connectAndSupervise;
@@ -333,8 +328,8 @@ public class Velope {
         }
 
         private void setupInitialListener(Map<String, VelopedServer> velopedServerMap) {
-            String group = velopeConfig.getInitialConnectionGroup();
-            if (velopeConfig.getInitialConnectionGroup() == null) {
+            String group = velopeConfig.getInitialGroup();
+            if (velopeConfig.getInitialGroup() == null) {
                 return;
             }
             if (!velopedServerMap.containsKey(group)) {

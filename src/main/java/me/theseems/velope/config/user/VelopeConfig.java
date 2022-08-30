@@ -5,7 +5,7 @@ import java.util.List;
 public class VelopeConfig {
     private List<VelopeGroupConfig> groups;
     private String rootGroup;
-    private String initialConnectionGroup;
+    private String initialGroup;
 
     public List<VelopeGroupConfig> getGroups() {
         return groups;
@@ -15,7 +15,7 @@ public class VelopeConfig {
         return rootGroup;
     }
 
-    public String getInitialConnectionGroup() {
-        return initialConnectionGroup;
+    public String getInitialGroup() {
+        return initialGroup;
     }
 }
