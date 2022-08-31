@@ -12,12 +12,10 @@ import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.server.VelopedServerRepository;
 import me.theseems.velope.status.ServerStatusRepository;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
 import java.util.Collection;
-import java.util.function.BinaryOperator;
 
 public class VelopeCommand implements SimpleCommand {
     public static final String LIST_SUBCOMMAND_USE_PERMISSION = "velope.list";

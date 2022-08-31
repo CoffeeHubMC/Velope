@@ -1,7 +1,6 @@
 package me.theseems.velope.config.code;
 
 import com.google.inject.AbstractModule;
-import me.theseems.velope.Velope;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.minimessage.tag.standard.StandardTags;

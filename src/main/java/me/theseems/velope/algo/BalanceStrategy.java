@@ -36,6 +36,34 @@ public enum BalanceStrategy {
         }
 
         return Optional.of(result);
+    }),
+    LOWEST(server -> {
+        if (server == null || server.getGroup().isEmpty()) {
+            return Optional.empty();
+        }
+
+        ServerInfo result = server.getGroup().get(0);
+        long minAmount = Velope.getStatusRepository()
+                .getStatus(result.getName())
+                .map(ServerStatus::getPlayerCount)
+                .orElse(Long.MAX_VALUE);
+
+        for (ServerInfo serverInfo : server.getGroup()) {
+            Optional<ServerStatus> optionalServerStatus =
+                    Velope.getStatusRepository().getStatus(serverInfo.getName());
+
+            if (optionalServerStatus.isEmpty()) {
+                continue;
+            }
+
+            ServerStatus status = optionalServerStatus.get();
+            if (status.getPlayerCount() < minAmount && status.getPlayerCount() + 1 <= status.getMaxPlayerCount()) {
+                minAmount = status.getPlayerCount();
+                result = serverInfo;
+            }
+        }
+
+        return Optional.of(result);
     });
 
     public interface BaseBalanceStrategy {

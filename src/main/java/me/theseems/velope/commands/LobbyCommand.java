@@ -17,6 +17,8 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import static me.theseems.velope.utils.ConnectionUtils.*;
 
 public class LobbyCommand implements SimpleCommand {
+    private static final String LOBBY_COMMAND_USE_PERMISSION = "velope.use.lobby";
+
     @Inject
     private VelopeConfig velopeConfig;
     @Inject
@@ -29,6 +31,12 @@ public class LobbyCommand implements SimpleCommand {
         CommandSource source = invocation.source();
         if (!(source instanceof Player)) {
             source.sendMessage(Component.text("This command is only for ingame use."));
+            return;
+        }
+        if (!source.hasPermission(LOBBY_COMMAND_USE_PERMISSION)) {
+            source.sendMessage(Component
+                    .text("You don't have permission to use that command.")
+                    .color(NamedTextColor.RED));
             return;
         }
 

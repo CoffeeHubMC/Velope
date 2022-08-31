@@ -3,20 +3,17 @@ package me.theseems.velope.listener;
 import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.player.KickedFromServerEvent;
-import com.velocitypowered.api.event.player.ServerPreConnectEvent;
-import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-import com.velocitypowered.api.proxy.server.ServerInfo;
 import me.theseems.velope.Velope;
 import me.theseems.velope.config.user.VelopeConfig;
 import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.server.VelopedServerRepository;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 
 import java.util.Optional;
 
-import static me.theseems.velope.utils.ConnectionUtils.*;
+import static me.theseems.velope.utils.ConnectionUtils.findNearestAvailable;
+import static me.theseems.velope.utils.ConnectionUtils.findWithBalancer;
 
 public class VelopeServerKickListener {
     @Inject
@@ -41,6 +38,13 @@ public class VelopeServerKickListener {
                     velopedServerRepository.findParent(currentServerName)
                             .map(VelopedServer::getParent)
                             .orElse(null));
+
+            if (destination == null
+                    && Optional.ofNullable(velopeConfig.isRedirectIfUnknownEnabled()).orElse(true)) {
+                destination = findWithBalancer(
+                        velope.getProxyServer(),
+                        velopedServerRepository.getServer(velopeConfig.getRootGroup()));
+            }
         }
 
         if (destination == null) {

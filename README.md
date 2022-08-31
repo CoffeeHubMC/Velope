@@ -16,7 +16,7 @@ Simple Velocity (only) plugin for basic server balancing
 - /velope list - Get list of all veloped servers (groups) there are | velope.list
 - /velope reload - Reload config | velope.reload
 - /vstatus <server_name> - Get status of either regular or veloped server | velope.status.use
-- /lobby (/leave, /back) - Connect to parent veloped Server (if there's any)
+- /lobby (/leave, /back) - Connect to parent veloped Server (if there's any) | velope.lobby.use
 
 ## Config (Description)
 
@@ -77,6 +77,7 @@ For the moment there are two basic balancer strategies:
 
 - FIRST - created for testing purposes, it always outputs the first server that has been associated with a group
 - HIGHEST - basically tries to fill the server: outputs server with the largest amount of players connected
+- LOWEST - outputs server with the least amount of players connected
 
 ## Support
 This plugin is somewhat just a bit better than "proof-of-concept" so there's a lot of things to hone.  

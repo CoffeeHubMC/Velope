@@ -238,9 +238,7 @@ public class Velope {
                         registeredServer,
                         group.getBalanceStrategy(),
                         null,
-                        serverInfoList
-                );
-
+                        serverInfoList);
                 velopedServerMap.put(server.getName(), server);
             }
         }
@@ -341,7 +339,9 @@ public class Velope {
             VelopeServerInitialListener listener = injector.createChildInjector(new AbstractModule() {
                 @Override
                 protected void configure() {
-                    bind(VelopedServer.class).annotatedWith(Names.named("initial")).toInstance(server);
+                    bind(VelopedServer.class)
+                            .annotatedWith(Names.named("initial"))
+                            .toInstance(server);
                 }
             }).getInstance(VelopeServerInitialListener.class);
 

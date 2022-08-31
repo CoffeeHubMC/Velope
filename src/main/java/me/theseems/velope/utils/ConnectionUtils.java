@@ -9,8 +9,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
 import java.util.Optional;
-import java.util.Stack;
-import java.util.stream.Collectors;
 
 public class ConnectionUtils {
     public static void connectAndSupervise(ProxyServer proxyServer, Player player, VelopedServer velopedServer) {
@@ -58,15 +56,12 @@ public class ConnectionUtils {
         }
 
         RegisteredServer registeredServer = null;
-        Stack<VelopedServer> trace = new Stack<>();
-
         while (velopedServer != null) {
             Optional<RegisteredServer> server = velopedServer.getBalanceStrategy()
                     .getStrategy()
                     .getOptimalServer(velopedServer)
                     .flatMap(serverInfo -> proxyServer.getServer(serverInfo.getName()));
 
-            trace.push(velopedServer);
             if (server.isPresent()) {
                 registeredServer = server.get();
                 break;
