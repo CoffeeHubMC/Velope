@@ -7,13 +7,15 @@ Simple Velocity (only) plugin for basic server balancing
 - Server groups with balancer and commands to have direct access to them
 - Kick handler
 - Lobby command (go to one of the current server's parent group)
-- List of veloped servers, ability to reload plugin (WIP)
+- List of veloped servers, smart config reload (WIP)
+- Initial sever group (instead of just one static server, players will be connected to the group's balancer determined server on join)
 
 ## Commands
 
 - /velope - Get info about plugin as well as get a list of accessible commands | (no permission)
 - /velope list - Get list of all veloped servers (groups) there are | velope.list
-- /vstatus <server_name> - Get status of either regular or veloped server | velope.status
+- /velope reload - Reload config | velope.reload
+- /vstatus <server_name> - Get status of either regular or veloped server | velope.status.use
 - /lobby (/leave, /back) - Connect to parent veloped Server (if there's any)
 
 ## Config (Description)
@@ -74,7 +76,7 @@ connected to the group's balancer determined server.
 For the moment there are two basic balancer strategies:
 
 - FIRST - created for testing purposes, it always outputs the first server that has been associated with a group
-- HIGHEST - basically tries to fill the server: outputs server with largest amount of players connected
+- HIGHEST - basically tries to fill the server: outputs server with the largest amount of players connected
 
 ## Support
 This plugin is somewhat just a bit better than "proof-of-concept" so there's a lot of things to hone.  
