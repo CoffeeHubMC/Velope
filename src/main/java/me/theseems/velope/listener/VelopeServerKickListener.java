@@ -41,6 +41,12 @@ public class VelopeServerKickListener {
                     velopedServerRepository.findParent(currentServerName)
                             .map(VelopedServer::getParent)
                             .orElse(null));
+
+            if (destination == null && Optional.ofNullable(velopeConfig.isRedirectIfUnknownEnabled()).orElse(true)) {
+                destination = findWithBalancer(
+                        velope.getProxyServer(),
+                        velopedServerRepository.getServer(velopeConfig.getRootGroup()));
+            }
         }
 
         if (destination == null) {
