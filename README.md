@@ -85,4 +85,4 @@ This plugin is somewhat just a bit better than "proof-of-concept" so there's a l
 Contact me if you face any issues either directly  
 
 Discord: Crying Lightning#4888   
-Or join my cosy (empty) [Discord Server](https://discord.gg/AucwzPdQDh)
+Or join my cosy (empty) [Discord Server](https://theseems.ru/coffeehub/discord)
