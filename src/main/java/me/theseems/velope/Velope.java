@@ -2,13 +2,16 @@ package me.theseems.velope;
 
 import com.google.common.io.Files;
 import com.google.gson.Gson;
-import com.google.inject.*;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
 import com.google.inject.name.Names;
 import com.velocitypowered.api.command.CommandManager;
 import com.velocitypowered.api.command.CommandMeta;
 import com.velocitypowered.api.command.SimpleCommand;
-import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.Player;
@@ -17,6 +20,7 @@ import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerInfo;
 import com.velocitypowered.api.proxy.server.ServerPing;
+import com.velocitypowered.api.scheduler.ScheduledTask;
 import me.theseems.velope.commands.LobbyCommand;
 import me.theseems.velope.commands.StatusCommand;
 import me.theseems.velope.commands.VelopeCommand;
@@ -27,6 +31,7 @@ import me.theseems.velope.config.code.VelopeUserConfig;
 import me.theseems.velope.config.user.VelopeCommandConfig;
 import me.theseems.velope.config.user.VelopeConfig;
 import me.theseems.velope.config.user.VelopeGroupConfig;
+import me.theseems.velope.config.user.VelopePingerConfig;
 import me.theseems.velope.handler.ServerPingerHandler;
 import me.theseems.velope.listener.VelopeServerInitialListener;
 import me.theseems.velope.listener.VelopeServerJoinListener;
@@ -39,9 +44,13 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.slf4j.Logger;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -56,14 +65,24 @@ import static me.theseems.velope.utils.ConnectionUtils.connectAndSupervise;
         authors = {"theseems"}
 )
 public class Velope {
+    private static final long CACHE_TTL_HARD_MIN = 3000L;
+    private static final long CACHE_TTL_DEFAULT = 10_000L;
 
-    private final Logger logger;
-    private final ProxyServer proxyServer;
-    private final Path pluginFolder;
+    private static final long PINGER_INTERVAL_HARD_MIN = 3000L;
+    private static final long PINGER_INTERVAL_DEFAULT = 10_000L;
+
+    private static final long LOG_UNAVAILABLE_COOLDOWN_HARD_MIN = 3000L;
+    private static final long LOG_UNAVAILABLE_COOLDOWN_DEFAULT = 120_000L;
+
     private static Velope velope;
     private static Injector injector;
     private static VelopeConfig velopeConfig;
     private static RepositorySetup repositorySetup;
+
+    private final Logger logger;
+    private final ProxyServer proxyServer;
+    private final Path pluginFolder;
+    private ScheduledTask pingerTask;
 
     @Inject
     public Velope(Logger logger, ProxyServer proxyServer, @DataDirectory Path pluginFolder) {
@@ -115,11 +134,7 @@ public class Velope {
                 manager.metaBuilder("vstatus").build(),
                 injector.getInstance(StatusCommand.class));
 
-        // Register handler
-        proxyServer.getScheduler()
-                .buildTask(this, injector.getInstance(ServerPingerHandler.class))
-                .repeat(10, TimeUnit.SECONDS)
-                .schedule();
+        pingerTask = setupPingerTask();
     }
 
     private VelopeConfig loadConfig() throws IOException {
@@ -155,6 +170,7 @@ public class Velope {
     }
 
     public void reload() throws IOException {
+        pingerTask.cancel();
         repositorySetup.clear();
         injector.getInstance(ServerStatusRepository.class).deleteAll();
         injector.getInstance(VelopedServerRepository.class).deleteAll();
@@ -173,6 +189,45 @@ public class Velope {
 
         // Setup repositories
         repositorySetup.setup();
+        pingerTask = setupPingerTask();
+    }
+
+    private ScheduledTask setupPingerTask() {
+        Injector handlerInjector = injector.createChildInjector(new AbstractModule() {
+            @Override
+            protected void configure() {
+                Duration cacheTtl = Duration.ofMillis(Math.max(
+                        CACHE_TTL_HARD_MIN,
+                        Optional.ofNullable(velopeConfig.getPingerConfig())
+                                .map(VelopePingerConfig::getCacheTtl)
+                                .orElse(CACHE_TTL_DEFAULT)));
+                Duration logUavailableCooldown = Duration.ofMillis(Math.max(
+                        LOG_UNAVAILABLE_COOLDOWN_HARD_MIN,
+                        Optional.ofNullable(velopeConfig.getPingerConfig())
+                                .map(VelopePingerConfig::getLogUnavailableCooldown)
+                                .orElse(LOG_UNAVAILABLE_COOLDOWN_DEFAULT)));
+
+                bind(Duration.class)
+                        .annotatedWith(Names.named("cacheTtl"))
+                        .toInstance(cacheTtl);
+
+                bind(Duration.class)
+                        .annotatedWith(Names.named("logUnavailableCooldown"))
+                        .toInstance(logUavailableCooldown);
+            }
+        });
+
+        long pingerInterval = Math.max(
+                PINGER_INTERVAL_HARD_MIN,
+                Optional.ofNullable(velopeConfig.getPingerConfig())
+                        .map(VelopePingerConfig::getPingInterval)
+                        .orElse(PINGER_INTERVAL_DEFAULT));
+
+        // Register handler
+        return proxyServer.getScheduler()
+                .buildTask(this, handlerInjector.getInstance(ServerPingerHandler.class))
+                .repeat(pingerInterval, TimeUnit.MILLISECONDS)
+                .schedule();
     }
 
     public Logger getLogger() {
@@ -203,15 +258,16 @@ public class Velope {
             for (VelopeGroupConfig group : velopeConfig.getGroups()) {
                 index++;
 
-                List<ServerInfo> serverInfoList = new ArrayList<>();
+                List<String> serverInfoList = new ArrayList<>();
                 for (String server : group.getServers()) {
                     RegisteredServer registeredServer = velope.getProxyServer().getServer(server).orElse(null);
                     if (registeredServer == null) {
-                        velope.getLogger().error("Server '" + server + "' was not found");
+                        velope.getLogger().error("Server '" + server + "' is not found");
+                        serverInfoList.add(server);
                         continue;
                     }
 
-                    serverInfoList.add(registeredServer.getServerInfo());
+                    serverInfoList.add(registeredServer.getServerInfo().getName());
                     registeredServer.ping().whenCompleteAsync((serverPing, throwable) ->
                             serverStatusRepository.saveStatus(
                                     new ServerStatus(

@@ -2,7 +2,6 @@ package me.theseems.velope.handler;
 
 import com.google.inject.Inject;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-import com.velocitypowered.api.proxy.server.ServerInfo;
 import com.velocitypowered.api.proxy.server.ServerPing;
 import me.theseems.velope.Velope;
 import me.theseems.velope.server.VelopedServer;
@@ -10,6 +9,7 @@ import me.theseems.velope.server.VelopedServerRepository;
 import me.theseems.velope.status.ServerStatus;
 import me.theseems.velope.status.ServerStatusRepository;
 
+import javax.inject.Named;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Map;
@@ -17,15 +17,19 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ServerPingerHandler implements Runnable {
-    private static final Duration CACHE_TTL = Duration.ofSeconds(10);
-    private static final Duration LOG_UNAVAILABLE_COOLDOWN = Duration.ofMinutes(1);
-
     @Inject
     private ServerStatusRepository statusRepository;
     @Inject
     private VelopedServerRepository velopedServerRepository;
     @Inject
     private Velope velope;
+
+    @Inject
+    @Named("cacheTtl")
+    private Duration cacheTtl;
+    @Inject
+    @Named("logUnavailableCooldown")
+    private Duration logUnavailableCooldown;
 
     static class CacheEntry {
         private ZonedDateTime latestRetreive;
@@ -36,17 +40,17 @@ public class ServerPingerHandler implements Runnable {
         }
     }
 
-    private final Map<ServerInfo, CacheEntry> cacheEntryMap;
+    private final Map<String, CacheEntry> cacheEntryMap;
 
     public ServerPingerHandler() {
         cacheEntryMap = new ConcurrentHashMap<>();
     }
 
-    private void fetch(ServerInfo serverInfo, CacheEntry cacheEntry) {
+    private void fetch(String serverName, CacheEntry cacheEntry) {
         Optional<RegisteredServer> registeredServerOptional =
-                velope.getProxyServer().getServer(serverInfo.getName());
+                velope.getProxyServer().getServer(serverName);
         if (registeredServerOptional.isEmpty()) {
-            statusRepository.deleteStatus(serverInfo.getName());
+            statusRepository.deleteStatus(serverName);
             return;
         }
 
@@ -55,25 +59,17 @@ public class ServerPingerHandler implements Runnable {
             boolean available = true;
             if (throwable != null) {
                 available = false;
-
-                if (cacheEntry.lastLogUnavailable == null
-                        || Duration.between(cacheEntry.lastLogUnavailable, ZonedDateTime.now()).compareTo(LOG_UNAVAILABLE_COOLDOWN) > 0) {
-                    velope.getLogger().warn("Could not ping server '" + serverInfo.getName() + "'");
-                    cacheEntry.lastLogUnavailable = ZonedDateTime.now();
-                }
+                logUnavailable(cacheEntry,
+                        "Could not ping server '" + serverName + "'");
             }
             if (available && serverPing.getPlayers().isEmpty()) {
                 available = false;
-
-                if (cacheEntry.lastLogUnavailable == null
-                        || Duration.between(cacheEntry.lastLogUnavailable, ZonedDateTime.now()).compareTo(LOG_UNAVAILABLE_COOLDOWN) > 0) {
-                    velope.getLogger().warn("Could not find players on server '" + serverInfo.getName() + "'");
-                    cacheEntry.lastLogUnavailable = ZonedDateTime.now();
-                }
+                logUnavailable(cacheEntry,
+                        "Could not find players on server '" + serverName + "'");
             }
 
             ServerStatus status = new ServerStatus(
-                    serverInfo,
+                    registeredServer.getServerInfo(),
                     serverPing.getDescriptionComponent(),
                     available,
                     serverPing.getPlayers().map(ServerPing.Players::getOnline).orElse(0),
@@ -86,15 +82,15 @@ public class ServerPingerHandler implements Runnable {
     @Override
     public void run() {
         for (VelopedServer velopedServer : velopedServerRepository.findAll()) {
-            for (ServerInfo serverInfo : velopedServer.getGroup()) {
-                CacheEntry entry = cacheEntryMap.get(serverInfo);
+            for (String child : velopedServer.getGroup()) {
+                CacheEntry entry = cacheEntryMap.get(child);
                 if (entry == null
-                        || Duration.between(entry.latestRetreive, ZonedDateTime.now()).compareTo(CACHE_TTL) > 0) {
-                    fetch(serverInfo, entry);
-                    if (!cacheEntryMap.containsKey(serverInfo)) {
-                        cacheEntryMap.put(serverInfo, new CacheEntry(ZonedDateTime.now()));
+                        || Duration.between(entry.latestRetreive, ZonedDateTime.now()).compareTo(cacheTtl) > 0) {
+                    fetch(child, entry);
+                    if (!cacheEntryMap.containsKey(child)) {
+                        cacheEntryMap.put(child, new CacheEntry(ZonedDateTime.now()));
                     } else {
-                        cacheEntryMap.get(serverInfo).latestRetreive = ZonedDateTime.now();
+                        cacheEntryMap.get(child).latestRetreive = ZonedDateTime.now();
                     }
                 }
             }
@@ -102,9 +98,17 @@ public class ServerPingerHandler implements Runnable {
 
         // Wipe out expired
         cacheEntryMap.forEach((serverInfo, cacheEntry) -> {
-            if (Duration.between(cacheEntry.latestRetreive, ZonedDateTime.now()).compareTo(CACHE_TTL) > 0) {
+            if (Duration.between(cacheEntry.latestRetreive, ZonedDateTime.now()).compareTo(cacheTtl) > 0) {
                 cacheEntryMap.remove(serverInfo);
             }
         });
+    }
+
+    private void logUnavailable(CacheEntry entry, String message) {
+        if (entry.lastLogUnavailable == null
+                || Duration.between(entry.lastLogUnavailable, ZonedDateTime.now()).compareTo(logUnavailableCooldown) > 0) {
+            velope.getLogger().warn(message);
+            entry.lastLogUnavailable = ZonedDateTime.now();
+        }
     }
 }

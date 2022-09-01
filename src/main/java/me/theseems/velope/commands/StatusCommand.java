@@ -4,9 +4,7 @@ import com.google.inject.Inject;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-import com.velocitypowered.api.proxy.server.ServerInfo;
 import me.theseems.velope.Velope;
-import me.theseems.velope.config.user.VelopeConfig;
 import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.server.VelopedServerRepository;
 import me.theseems.velope.status.ServerStatus;
@@ -14,6 +12,7 @@ import me.theseems.velope.status.ServerStatusRepository;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,8 +22,6 @@ public class StatusCommand implements SimpleCommand {
     public static final String STATUS_COMMAND_USE_PERMISSION = "velope.status.use";
 
     @Inject
-    private VelopeConfig velopeConfig;
-    @Inject
     private VelopedServerRepository serverRepository;
     @Inject
     private ServerStatusRepository statusRepository;
@@ -33,19 +30,22 @@ public class StatusCommand implements SimpleCommand {
     @Inject
     private MiniMessage miniMessage;
 
-    private Component describeServerInfo(ServerInfo serverInfo) {
-        Optional<ServerStatus> serverStatusOptional = statusRepository.getStatus(serverInfo.getName());
+    private Component describeServerInfo(String serverName) {
+        Optional<ServerStatus> serverStatusOptional = statusRepository.getStatus(serverName);
         if (serverStatusOptional.isEmpty()) {
             return miniMessage.deserialize(
-                    "<red>[" + serverInfo.getName() + "]</red> - <red>Unknown</red>");
+                    "<click:run_command:/vstatus " + serverName + ">" +
+                            "<red>[" + serverName + "]</red> - <red>Unknown</red>"
+                            + "</click>"
+            );
         }
 
         ServerStatus status = serverStatusOptional.get();
         return miniMessage.deserialize(
-                "<click:run_command:vstatus " + serverInfo.getName() + ">" +
+                "<click:run_command:/vstatus " + serverName + ">" +
                         (status.isAvailable()
-                                ? "<green>" + serverInfo.getName() + " (" + status.getPlayerCount() + "/" + status.getMaxPlayerCount() + ")</green>"
-                                : "<yellow>" + serverInfo.getName() + " (Unavailable)</yellow>")
+                                ? "<green>" + serverName + " (" + status.getPlayerCount() + "/" + status.getMaxPlayerCount() + ")</green>"
+                                : "<yellow>" + serverName + " (Unavailable)</yellow>")
                         + "</click>"
         );
     }
@@ -62,7 +62,9 @@ public class StatusCommand implements SimpleCommand {
 
         String[] args = invocation.arguments();
         if (args.length == 0) {
-            sender.sendMessage(Component.text("Please, enter the server name").color(NamedTextColor.RED));
+            sender.sendMessage(Component
+                    .text("Please, enter the server name.")
+                    .color(NamedTextColor.RED));
             return;
         }
 
@@ -74,9 +76,10 @@ public class StatusCommand implements SimpleCommand {
                     .collect(Collectors.toList());
 
             Component result =
-                    miniMessage.deserialize(String.format(
-                                    "<gray>---------</gray> <bold><yellow>%s</yellow></bold> <gray>---------</gray>",
-                                    serverName))
+                    LegacyComponentSerializer.legacyAmpersand().deserialize(
+                                    String.format(
+                                            "&8&m         &r &e[Veloped] %s &8&m         &r",
+                                            serverName))
                             .append(Component.newline())
                             .append(miniMessage.deserialize(String.format(
                                     "<gray>Contains </gray><yellow>%d</yellow> <gray>server(-s)</gray>",
@@ -92,9 +95,13 @@ public class StatusCommand implements SimpleCommand {
                     .map(RegisteredServer::getServerInfo)
                     .ifPresentOrElse(
                             serverInfo -> sender.sendMessage(
-                                    miniMessage.deserialize(String.format("<gray>---------</gray> %s <gray>---------</gray>", serverName))
+                                    LegacyComponentSerializer
+                                            .legacyAmpersand()
+                                            .deserialize(String.format(
+                                                    "&8&m         &r [Regular] %s &8&m         &r",
+                                                    serverName))
                                             .append(Component.newline())
-                                            .append(describeServerInfo(serverInfo))),
+                                            .append(describeServerInfo(serverInfo.getName()))),
                             () -> sender.sendMessage(
                                     Component.text("Could not find desired server (neither regular nor veloped)")
                                             .color(NamedTextColor.RED)));
