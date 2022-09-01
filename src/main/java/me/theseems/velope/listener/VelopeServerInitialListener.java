@@ -18,7 +18,10 @@ public class VelopeServerInitialListener {
 
     @Subscribe
     public void onPlayerJoin(PlayerChooseInitialServerEvent event) {
-        RegisteredServer server = ConnectionUtils.findNearestAvailable(velope.getProxyServer(), velopedServer);
+        RegisteredServer server = ConnectionUtils.findNearestAvailable(
+                velope.getProxyServer(),
+                velopedServer,
+                ConnectionUtils.getExclusionListForPlayer(event.getPlayer()));
         if (server == null) {
             velope.getLogger().info("Cannot find initial server: unavailable");
             return;

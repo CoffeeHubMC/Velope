@@ -5,14 +5,21 @@ import me.theseems.velope.Velope;
 import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.status.ServerStatus;
 
+import java.util.Collection;
 import java.util.Optional;
 
 public enum BalanceStrategy {
-    FIRST(server -> server.getGroup().stream()
-            .findFirst()
-            .flatMap(first -> Velope.getStatusRepository().getStatus(first))
-            .map(ServerStatus::getServerInfo)),
-    HIGHEST(server -> {
+    FIRST((server, excluded) -> {
+        Optional<ServerInfo> result = server.getGroup().stream()
+                .findFirst()
+                .flatMap(first -> Velope.getStatusRepository().getStatus(first))
+                .map(ServerStatus::getServerInfo);
+        if (result.isPresent() && excluded.contains(result.get().getName())) {
+            return Optional.empty();
+        }
+        return result;
+    }),
+    HIGHEST((server, excluded) -> {
         if (server == null || server.getGroup().isEmpty()) {
             return Optional.empty();
         }
@@ -26,6 +33,10 @@ public enum BalanceStrategy {
                 .orElse(-1L);
 
         for (String child : server.getGroup()) {
+            if (excluded.contains(child)) {
+                continue;
+            }
+
             Optional<ServerStatus> optionalServerStatus =
                     Velope.getStatusRepository().getStatus(child);
 
@@ -42,10 +53,14 @@ public enum BalanceStrategy {
             }
         }
 
+        if (result != null && excluded.contains(result.getServerInfo().getName())) {
+            return Optional.empty();
+        }
+
         return Optional.ofNullable(result)
                 .map(ServerStatus::getServerInfo);
     }),
-    LOWEST(server -> {
+    LOWEST((server, excluded) -> {
         if (server == null || server.getGroup().isEmpty()) {
             return Optional.empty();
         }
@@ -58,6 +73,10 @@ public enum BalanceStrategy {
                 .orElse(Long.MAX_VALUE);
 
         for (String child : server.getGroup()) {
+            if (excluded.contains(child)) {
+                continue;
+            }
+
             Optional<ServerStatus> optionalServerStatus =
                     Velope.getStatusRepository().getStatus(child);
 
@@ -74,12 +93,16 @@ public enum BalanceStrategy {
             }
         }
 
+        if (result != null && excluded.contains(result.getServerInfo().getName())) {
+            return Optional.empty();
+        }
+
         return Optional.ofNullable(result)
                 .map(ServerStatus::getServerInfo);
     });
 
     public interface BaseBalanceStrategy {
-        Optional<ServerInfo> getOptimalServer(VelopedServer server);
+        Optional<ServerInfo> getOptimalServer(VelopedServer server, Collection<String> excluded);
     }
 
     final BaseBalanceStrategy strategy;

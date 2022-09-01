@@ -11,8 +11,11 @@ import me.theseems.velope.Velope;
 import me.theseems.velope.config.user.VelopeConfig;
 import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.server.VelopedServerRepository;
+import me.theseems.velope.utils.ConnectionUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+
+import java.util.Collection;
 
 import static me.theseems.velope.utils.ConnectionUtils.*;
 
@@ -41,6 +44,7 @@ public class LobbyCommand implements SimpleCommand {
         }
 
         Player player = (Player) source;
+        Collection<String> excluded = ConnectionUtils.getExclusionListForPlayer(player);
         String currentServerName = player.getCurrentServer()
                 .map(ServerConnection::getServerInfo)
                 .map(ServerInfo::getName)
@@ -50,13 +54,15 @@ public class LobbyCommand implements SimpleCommand {
         if (currentServerName == null) {
             destination = findWithBalancer(
                     velope.getProxyServer(),
-                    velopedServerRepository.getServer(velopeConfig.getRootGroup()));
+                    velopedServerRepository.getServer(velopeConfig.getRootGroup()),
+                    excluded);
         } else {
             destination = findNearestAvailable(
                     velope.getProxyServer(),
                     velopedServerRepository.findParent(currentServerName)
                             .map(VelopedServer::getParent)
-                            .orElse(null));
+                            .orElse(null),
+                    excluded);
         }
 
         if (destination == null) {

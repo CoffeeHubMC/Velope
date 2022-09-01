@@ -8,9 +8,12 @@ import me.theseems.velope.Velope;
 import me.theseems.velope.config.user.VelopeConfig;
 import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.server.VelopedServerRepository;
+import me.theseems.velope.utils.ConnectionUtils;
 import net.kyori.adventure.text.Component;
 
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 import static me.theseems.velope.utils.ConnectionUtils.findNearestAvailable;
 import static me.theseems.velope.utils.ConnectionUtils.findWithBalancer;
@@ -26,24 +29,30 @@ public class VelopeServerKickListener {
     @Subscribe
     public void onPlayerKick(KickedFromServerEvent event) {
         String currentServerName = event.getServer().getServerInfo().getName();
+        Set<String> excluded = new HashSet<>(ConnectionUtils.getExclusionListForPlayer(event.getPlayer()));
 
         RegisteredServer destination;
         if (currentServerName == null) {
             destination = findWithBalancer(
                     velope.getProxyServer(),
-                    velopedServerRepository.getServer(velopeConfig.getRootGroup()));
+                    velopedServerRepository.getServer(velopeConfig.getRootGroup()),
+                    excluded);
         } else {
+            excluded.add(currentServerName);
+
             destination = findNearestAvailable(
                     velope.getProxyServer(),
                     velopedServerRepository.findParent(currentServerName)
                             .map(VelopedServer::getParent)
-                            .orElse(null));
+                            .orElse(null),
+                    excluded);
 
             if (destination == null
                     && Optional.ofNullable(velopeConfig.isRedirectIfUnknownEnabled()).orElse(true)) {
                 destination = findWithBalancer(
                         velope.getProxyServer(),
-                        velopedServerRepository.getServer(velopeConfig.getRootGroup()));
+                        velopedServerRepository.getServer(velopeConfig.getRootGroup()),
+                        excluded);
             }
         }
 
