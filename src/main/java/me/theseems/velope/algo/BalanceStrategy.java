@@ -34,7 +34,9 @@ public enum BalanceStrategy {
             }
 
             ServerStatus status = optionalServerStatus.get();
-            if (status.getPlayerCount() > maxAmount && status.getPlayerCount() + 1 <= status.getMaxPlayerCount()) {
+            if (status.isAvailable()
+                    && status.getPlayerCount() > maxAmount
+                    && status.getPlayerCount() + 1 <= status.getMaxPlayerCount()) {
                 maxAmount = status.getPlayerCount();
                 result = status;
             }
@@ -64,7 +66,9 @@ public enum BalanceStrategy {
             }
 
             ServerStatus status = optionalServerStatus.get();
-            if (status.getPlayerCount() < minAmount && status.getPlayerCount() + 1 <= status.getMaxPlayerCount()) {
+            if (status.isAvailable()
+                    && status.getPlayerCount() < minAmount
+                    && status.getPlayerCount() + 1 <= status.getMaxPlayerCount()) {
                 minAmount = status.getPlayerCount();
                 result = status;
             }
