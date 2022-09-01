@@ -7,10 +7,8 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.ServerInfo;
 import me.theseems.velope.Velope;
-import me.theseems.velope.config.user.VelopeConfig;
 import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.server.VelopedServerRepository;
-import me.theseems.velope.status.ServerStatusRepository;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -22,11 +20,7 @@ public class VelopeCommand implements SimpleCommand {
     public static final String RELOAD_SUBCOMMAND_USE_PERMISSION = "velope.reload";
 
     @Inject
-    private VelopeConfig velopeConfig;
-    @Inject
     private VelopedServerRepository serverRepository;
-    @Inject
-    private ServerStatusRepository statusRepository;
     @Inject
     private Velope velope;
     @Inject
