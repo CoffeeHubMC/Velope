@@ -11,6 +11,7 @@ import me.theseems.velope.Velope;
 import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.server.VelopedServerRepository;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -51,7 +52,7 @@ public class VelopeCommand implements SimpleCommand {
 
                 Collection<VelopedServer> servers = serverRepository.findAll();
                 source.sendMessage(miniMessage.deserialize(String.format(
-                        "<gray>There are </gray><yellow>%d</yellow><gray> veloped server(-s)</gray>",
+                        "<gray>Recognized veloped server(s): </gray><yellow>%d</yellow>",
                         servers.size())));
 
                 String currentServerName = null;
@@ -59,7 +60,7 @@ public class VelopeCommand implements SimpleCommand {
                     currentServerName = ((Player) source).getCurrentServer()
                             .map(ServerConnection::getServerInfo)
                             .map(ServerInfo::getName)
-                            .map(serverName -> serverRepository.getServer(serverName))
+                            .map(serverName -> serverRepository.getParent(serverName))
                             .map(VelopedServer::getName)
                             .orElse(null);
                 }
@@ -71,6 +72,9 @@ public class VelopeCommand implements SimpleCommand {
                                         .color(velopedServer.getName().equals(finalCurrentServerName)
                                                 ? NamedTextColor.YELLOW
                                                 : NamedTextColor.GRAY)
+                                        .clickEvent(ClickEvent.clickEvent(
+                                                ClickEvent.Action.RUN_COMMAND,
+                                                "/vstatus " + velopedServer.getName()))
                                         .append(velopedServer.getParent() != null
                                                 ? Component.text(" (/\\ " + velopedServer.getParent().getName() + ")")
                                                 : Component.empty()))

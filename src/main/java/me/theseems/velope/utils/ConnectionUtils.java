@@ -50,16 +50,16 @@ public class ConnectionUtils {
         return findNearestAvailable(proxyServer, parent == null ? repository.getServer(serverName) : parent);
     }
 
-    public static RegisteredServer findNearestAvailable(ProxyServer proxyServer, VelopedServer velopedServer) {
-        if (velopedServer == null) {
+    public static RegisteredServer findNearestAvailable(ProxyServer proxyServer, VelopedServer origin) {
+        if (origin == null) {
             return null;
         }
 
         RegisteredServer registeredServer = null;
-        while (velopedServer != null) {
-            Optional<RegisteredServer> server = velopedServer.getBalanceStrategy()
+        while (origin != null) {
+            Optional<RegisteredServer> server = origin.getBalanceStrategy()
                     .getStrategy()
-                    .getOptimalServer(velopedServer)
+                    .getOptimalServer(origin)
                     .flatMap(serverInfo -> proxyServer.getServer(serverInfo.getName()));
 
             if (server.isPresent()) {
@@ -67,7 +67,7 @@ public class ConnectionUtils {
                 break;
             }
 
-            velopedServer = velopedServer.getParent();
+            origin = origin.getParent();
         }
 
         return registeredServer;
