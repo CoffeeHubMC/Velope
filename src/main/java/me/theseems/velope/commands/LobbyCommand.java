@@ -60,7 +60,9 @@ public class LobbyCommand implements SimpleCommand {
         }
 
         if (destination == null) {
-            source.sendMessage(Component.text("There is nowhere to go").color(NamedTextColor.RED));
+            source.sendMessage(Component
+                    .text("There is nowhere to go.")
+                    .color(NamedTextColor.RED));
             return;
         }
 

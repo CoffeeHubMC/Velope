@@ -6,12 +6,14 @@ import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.ServerInfo;
+import me.theseems.velope.BuildConstants;
 import me.theseems.velope.Velope;
 import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.server.VelopedServerRepository;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 import java.util.Collection;
 
@@ -92,7 +94,7 @@ public class VelopeCommand implements SimpleCommand {
                 try {
                     velope.reload();
                     source.sendMessage(Component
-                            .text("Reloaded.")
+                            .text("Velope is reloaded.")
                             .color(NamedTextColor.YELLOW));
                 } catch (Exception e) {
                     source.sendMessage(Component
@@ -110,19 +112,23 @@ public class VelopeCommand implements SimpleCommand {
 
     private void sendAbout(CommandSource source) {
         source.sendMessage(
-                miniMessage.deserialize(
-                                "<gray>--------- <yellow><bold>Velope</bold></yellow> <gray>---------</gray>")
+                LegacyComponentSerializer.legacyAmpersand().deserialize(
+                                "&8&m         &r &e&lVelope v" + BuildConstants.VERSION + " &8&m         &r")
                         .append(Component.newline())
-                        .append(miniMessage.deserialize("<gray>Velocity Plugin for simple balancing</gray>"))
+                        .append(LegacyComponentSerializer.legacyAmpersand()
+                                .deserialize("&7Velocity Plugin for simple balancing & server organising."))
                         .append(Component.newline())
                         .append(source.hasPermission(LIST_SUBCOMMAND_USE_PERMISSION)
-                                ? miniMessage.deserialize("<yellow>/velope list</yellow>").append(Component.newline())
+                                ? miniMessage.deserialize("<yellow>/velope list</yellow>")
+                                .append(Component.newline())
                                 : Component.empty())
                         .append(source.hasPermission(RELOAD_SUBCOMMAND_USE_PERMISSION)
-                                ? miniMessage.deserialize("<yellow>/velope reload</yellow>").append(Component.newline())
+                                ? miniMessage.deserialize("<yellow>/velope reload</yellow>")
+                                .append(Component.newline())
                                 : Component.empty())
                         .append(source.hasPermission(StatusCommand.STATUS_COMMAND_USE_PERMISSION)
-                                ? miniMessage.deserialize("<yellow>/vstatus |server_name|</yellow>").append(Component.newline())
+                                ? LegacyComponentSerializer.legacyAmpersand()
+                                .deserialize("&e/vstatus <server_name>")
                                 : Component.empty()));
     }
 }

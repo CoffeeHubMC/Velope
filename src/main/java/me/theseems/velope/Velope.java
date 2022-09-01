@@ -212,7 +212,7 @@ public class Velope {
                         .toInstance(cacheTtl);
 
                 bind(Duration.class)
-                        .annotatedWith(Names.named("logUavailableCooldown"))
+                        .annotatedWith(Names.named("logUnavailableCooldown"))
                         .toInstance(logUavailableCooldown);
             }
         });
