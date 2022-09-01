@@ -8,13 +8,15 @@ import me.theseems.velope.server.VelopedServerRepository;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
 
 public class ConnectionUtils {
     public static void connectAndSupervise(ProxyServer proxyServer, Player player, VelopedServer velopedServer) {
         velopedServer.getBalanceStrategy()
                 .getStrategy()
-                .getOptimalServer(velopedServer)
+                .getOptimalServer(velopedServer, getExclusionListForPlayer(player))
                 .flatMap(serverInfo -> proxyServer.getServer(serverInfo.getName()))
                 .ifPresentOrElse(
                         (server) -> connectAndSupervise(player, server),
@@ -41,16 +43,21 @@ public class ConnectionUtils {
                 });
     }
 
-    public static RegisteredServer findNearestAvailable(VelopedServerRepository repository, ProxyServer proxyServer, String serverName) {
+    public static RegisteredServer findNearestAvailable(VelopedServerRepository repository,
+                                                        ProxyServer proxyServer,
+                                                        String serverName,
+                                                        Collection<String> excluded) {
         if (serverName == null) {
             return null;
         }
 
         VelopedServer parent = repository.getParent(serverName);
-        return findNearestAvailable(proxyServer, parent == null ? repository.getServer(serverName) : parent);
+        return findNearestAvailable(proxyServer, parent == null ? repository.getServer(serverName) : parent, excluded);
     }
 
-    public static RegisteredServer findNearestAvailable(ProxyServer proxyServer, VelopedServer origin) {
+    public static RegisteredServer findNearestAvailable(ProxyServer proxyServer,
+                                                        VelopedServer origin,
+                                                        Collection<String> excluded) {
         if (origin == null) {
             return null;
         }
@@ -59,7 +66,7 @@ public class ConnectionUtils {
         while (origin != null) {
             Optional<RegisteredServer> server = origin.getBalanceStrategy()
                     .getStrategy()
-                    .getOptimalServer(origin)
+                    .getOptimalServer(origin, excluded)
                     .flatMap(serverInfo -> proxyServer.getServer(serverInfo.getName()));
 
             if (server.isPresent()) {
@@ -73,11 +80,19 @@ public class ConnectionUtils {
         return registeredServer;
     }
 
-    public static RegisteredServer findWithBalancer(ProxyServer proxyServer, VelopedServer velopedServer) {
+    public static Collection<String> getExclusionListForPlayer(Player player) {
+        return player.getCurrentServer()
+                .map(serverConnection -> Collections.singleton(serverConnection.getServerInfo().getName()))
+                .orElse(Collections.emptySet());
+    }
+
+    public static RegisteredServer findWithBalancer(ProxyServer proxyServer,
+                                                    VelopedServer velopedServer,
+                                                    Collection<String> excluded) {
         return velopedServer
                 .getBalanceStrategy()
                 .getStrategy()
-                .getOptimalServer(velopedServer)
+                .getOptimalServer(velopedServer, excluded)
                 .flatMap(serverInfo -> proxyServer.getServer(serverInfo.getName()))
                 .orElse(null);
     }

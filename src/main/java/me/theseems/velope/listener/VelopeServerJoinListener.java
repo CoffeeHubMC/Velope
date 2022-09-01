@@ -8,6 +8,7 @@ import com.velocitypowered.api.proxy.server.ServerInfo;
 import me.theseems.velope.Velope;
 import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.server.VelopedServerRepository;
+import me.theseems.velope.utils.ConnectionUtils;
 import net.kyori.adventure.text.Component;
 
 import java.util.Optional;
@@ -34,7 +35,8 @@ public class VelopeServerJoinListener {
         RegisteredServer registeredServer = findNearestAvailable(
                 repository,
                 velope.getProxyServer(),
-                event.getOriginalServer().getServerInfo().getName());
+                event.getOriginalServer().getServerInfo().getName(),
+                ConnectionUtils.getExclusionListForPlayer(event.getPlayer()));
 
         if (registeredServer == null) {
             event.setResult(ServerPreConnectEvent.ServerResult.denied());
