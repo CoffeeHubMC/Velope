@@ -4,9 +4,7 @@ import com.google.inject.Inject;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-import com.velocitypowered.api.proxy.server.ServerInfo;
 import me.theseems.velope.Velope;
-import me.theseems.velope.config.user.VelopeConfig;
 import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.server.VelopedServerRepository;
 import me.theseems.velope.status.ServerStatus;
@@ -23,8 +21,6 @@ public class StatusCommand implements SimpleCommand {
     public static final String STATUS_COMMAND_USE_PERMISSION = "velope.status.use";
 
     @Inject
-    private VelopeConfig velopeConfig;
-    @Inject
     private VelopedServerRepository serverRepository;
     @Inject
     private ServerStatusRepository statusRepository;
@@ -33,19 +29,19 @@ public class StatusCommand implements SimpleCommand {
     @Inject
     private MiniMessage miniMessage;
 
-    private Component describeServerInfo(ServerInfo serverInfo) {
-        Optional<ServerStatus> serverStatusOptional = statusRepository.getStatus(serverInfo.getName());
+    private Component describeServerInfo(String serverName) {
+        Optional<ServerStatus> serverStatusOptional = statusRepository.getStatus(serverName);
         if (serverStatusOptional.isEmpty()) {
             return miniMessage.deserialize(
-                    "<red>[" + serverInfo.getName() + "]</red> - <red>Unknown</red>");
+                    "<red>[" + serverName + "]</red> - <red>Unknown</red>");
         }
 
         ServerStatus status = serverStatusOptional.get();
         return miniMessage.deserialize(
-                "<click:run_command:vstatus " + serverInfo.getName() + ">" +
+                "<click:run_command:vstatus " + serverName + ">" +
                         (status.isAvailable()
-                                ? "<green>" + serverInfo.getName() + " (" + status.getPlayerCount() + "/" + status.getMaxPlayerCount() + ")</green>"
-                                : "<yellow>" + serverInfo.getName() + " (Unavailable)</yellow>")
+                                ? "<green>" + serverName + " (" + status.getPlayerCount() + "/" + status.getMaxPlayerCount() + ")</green>"
+                                : "<yellow>" + serverName + " (Unavailable)</yellow>")
                         + "</click>"
         );
     }
@@ -94,7 +90,7 @@ public class StatusCommand implements SimpleCommand {
                             serverInfo -> sender.sendMessage(
                                     miniMessage.deserialize(String.format("<gray>---------</gray> %s <gray>---------</gray>", serverName))
                                             .append(Component.newline())
-                                            .append(describeServerInfo(serverInfo))),
+                                            .append(describeServerInfo(serverInfo.getName()))),
                             () -> sender.sendMessage(
                                     Component.text("Could not find desired server (neither regular nor veloped)")
                                             .color(NamedTextColor.RED)));

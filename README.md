@@ -43,7 +43,7 @@ Example configuration:
       "servers": [
         "bwlobby0"
       ],
-      "balanceStrategy": "HIGHEST",
+      "balanceStrategy": "LOWEST",
       "parent": "hubs",
       "command": {
         "label": "bedwars",
@@ -54,7 +54,12 @@ Example configuration:
     }
   ],
   "rootGroup": "hubs",
-  "initialGroup": "hubs"
+  "initialGroup": "hubs",
+  "pingerSettings": {
+    "cacheTtl": 10000,
+    "pingInterval": 10000,
+    "logUnavailableCooldown": 120000
+  }
 }
 ```
 
@@ -70,6 +75,11 @@ utilizes it).
 
 Initial group is used when player initially connects to the proxy: instead of just one static server, player will be
 connected to the group's balancer determined server.
+
+In pinger settings section you can change:
+- Cache TTL - how long server information should be cached until it will be refreshed
+- Ping Interval - specifies the time interval servers are pinged to retrieve their info
+- Log Unavailable Cooldown - specifies the cooldown for logging unsuccessful pings
 
 ### Balancer Strategies
 

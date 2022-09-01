@@ -1,7 +1,5 @@
 package me.theseems.velope.server;
 
-import com.velocitypowered.api.proxy.server.ServerInfo;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,21 +21,19 @@ public class MemoryVelopedServerRepository implements VelopedServerRepository {
     @Override
     public void addServer(VelopedServer velopedServer) {
         velopedServerMap.put(velopedServer.getName(), velopedServer);
-        for (ServerInfo serverInfo : velopedServer.getGroup()) {
-            if (commonServerMap.containsKey(serverInfo.getName())) {
-                throw new IllegalArgumentException("Multiple parent for server '" + serverInfo.getName() + "'");
+        for (String serverName : velopedServer.getGroup()) {
+            if (commonServerMap.containsKey(serverName)) {
+                throw new IllegalArgumentException("Multiple parent for server '" + serverName + "'");
             }
 
-            commonServerMap.put(serverInfo.getName(), velopedServer);
+            commonServerMap.put(serverName, velopedServer);
         }
     }
 
     @Override
     public void deleteServer(String name) {
         VelopedServer toBeDeleted = velopedServerMap.get(name);
-        toBeDeleted.getGroup().stream()
-                .map(ServerInfo::getName)
-                .forEach(commonServerMap::remove);
+        toBeDeleted.getGroup().forEach(commonServerMap::remove);
 
         velopedServerMap.remove(name);
     }

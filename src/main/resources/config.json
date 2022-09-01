@@ -2,24 +2,37 @@
   "groups": [
     {
       "name": "hubs",
-      "servers": ["hub0"],
+      "servers": [
+        "hub0"
+      ],
       "balanceStrategy": "HIGHEST",
       "command": {
         "label": "hub",
-        "aliases": ["root"]
+        "aliases": [
+          "root"
+        ]
       }
     },
     {
       "name": "bedwars_lobbies",
-      "servers": ["bwlobby0"],
-      "balanceStrategy": "HIGHEST",
+      "servers": [
+        "bwlobby0"
+      ],
+      "balanceStrategy": "LOWEST",
       "parent": "hubs",
       "command": {
         "label": "bedwars",
-        "aliases": ["bw"]
+        "aliases": [
+          "bw"
+        ]
       }
     }
   ],
   "rootGroup": "hubs",
-  "initialGroup": "hubs"
+  "initialGroup": "hubs",
+  "pingerSettings": {
+    "cacheTtl": 10000,
+    "pingInterval": 10000,
+    "logUnavailableCooldown": 120000
+  }
 }
