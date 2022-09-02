@@ -16,7 +16,7 @@ Simple Velocity (only) plugin for basic server balancing
 - /velope list - Get list of all veloped servers (groups) there are | velope.list
 - /velope reload - Reload config | velope.reload
 - /vstatus <server_name> - Get status of either regular or veloped server | velope.status.use
-- /lobby (/leave, /back) - Connect to parent veloped Server (if there's any) | velope.lobby.use
+- /lobby (/leave, /back) - Connect to parent veloped Server (if there's any) | velope.use.lobby
 
 ## Config (Description)
 
