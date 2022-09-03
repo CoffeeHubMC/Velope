@@ -1,4 +1,4 @@
-package me.theseems.velope.listener;
+package me.theseems.velope.listener.velope;
 
 import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;

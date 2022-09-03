@@ -1,4 +1,4 @@
-package me.theseems.velope.listener;
+package me.theseems.velope.listener.velope;
 
 import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
@@ -52,7 +52,7 @@ public class VelopeServerKickListener {
                     excluded);
 
             if (destination == null
-                    && Optional.ofNullable(velopeConfig.isRedirectIfUnknownEnabled()).orElse(true)) {
+                    && Optional.ofNullable(velopeConfig.getRedirectIfUnknownEnabled()).orElse(true)) {
                 destination = findWithBalancer(
                         velope.getProxyServer(),
                         serverRepository.getServer(velopeConfig.getRootGroup()),

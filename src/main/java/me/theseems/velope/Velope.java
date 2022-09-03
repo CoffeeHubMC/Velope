@@ -31,10 +31,11 @@ import me.theseems.velope.config.code.VelopeUserConfig;
 import me.theseems.velope.config.user.*;
 import me.theseems.velope.handler.ServerPingerHandler;
 import me.theseems.velope.history.RedirectHistoryRepository;
+import me.theseems.velope.listener.history.HistoryDisconnectListener;
 import me.theseems.velope.listener.support.AdvancedPortalsSupportMessageListener;
-import me.theseems.velope.listener.VelopeServerInitialListener;
-import me.theseems.velope.listener.VelopeServerJoinListener;
-import me.theseems.velope.listener.VelopeServerKickListener;
+import me.theseems.velope.listener.velope.VelopeServerInitialListener;
+import me.theseems.velope.listener.velope.VelopeServerJoinListener;
+import me.theseems.velope.listener.velope.VelopeServerKickListener;
 import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.server.VelopedServerRepository;
 import me.theseems.velope.status.ServerStatus;
@@ -241,8 +242,6 @@ public class Velope {
         @Inject
         private VelopedServerRepository serverRepository;
         @Inject
-        private RedirectHistoryRepository historyRepository;
-        @Inject
         private VelopeConfig velopeConfig;
         @Inject
         private Velope velope;
@@ -407,7 +406,7 @@ public class Velope {
             velope.getProxyServer().getEventManager().register(velope, listener);
         }
 
-        private void setupAdvancedPortalsSupport() {
+        private void enableAdvancedPortalsSupport() {
             velope.getLogger().info("Setting up AdvancedPortals message listener");
             Object listener = injector.getInstance(AdvancedPortalsSupportMessageListener.class);
             listeners.add(listener);
@@ -415,23 +414,58 @@ public class Velope {
             velope.getProxyServer().getEventManager().register(velope, listener);
         }
 
+        private void setupAdvancedPortalsSupport() {
+            boolean pluginFound = velope.getProxyServer()
+                    .getPluginManager()
+                    .isLoaded("advancedportals");
+
+            Optional.ofNullable(velopeConfig.getIntegrationsConfig())
+                    .map(VelopeIntegrationConfig::isAdvancedPortalsSupportEnabled)
+                    .ifPresentOrElse(
+                            (value) -> {
+                                if (value) {
+                                    if (!pluginFound) {
+                                        velope.getLogger().warn("AdvancedPortals plugin is not found @ Velocity." +
+                                                " Install it there in order to enable integration (support).");
+                                        return;
+                                    }
+
+                                    enableAdvancedPortalsSupport();
+                                }
+                            }, () -> {
+                                if (pluginFound) {
+                                    velope.getLogger()
+                                            .info("AdvancedPortals plugin is found. Support is enabled by default." +
+                                                    " You can disable it in 'integration' section @ config.");
+
+                                    enableAdvancedPortalsSupport();
+                                }
+                            }
+                    );
+        }
+
+        private void setupDisconnectListener() {
+            Object listener = injector.getInstance(HistoryDisconnectListener.class);
+            listeners.add(listener);
+
+            velope.getProxyServer().getEventManager().register(velope, listener);
+        }
+
         public void setup() {
             Map<String, VelopedServer> velopedServerMap = new HashMap<>();
+
+            // Generic startup pipeline
             fetchServers(velopedServerMap);
             linkParents(velopedServerMap);
             saveToRepository(velopedServerMap);
             registerGroupCommands(velopedServerMap);
+            setupDisconnectListener();
             setupInitialListener(velopedServerMap);
 
-            Optional.ofNullable(velopeConfig.getIntegrationsConfig())
-                    .map(VelopeIntegrationConfig::isAdvancedPortalsSupportEnabled)
-                    .ifPresent((value) -> {
-                        if (value) {
-                            setupAdvancedPortalsSupport();
-                        }
-                    });
+            // Support
+            setupAdvancedPortalsSupport();
 
-            velope.getLogger().info("Registered balancer servers: " + serverRepository.findAll().size());
+            velope.getLogger().info("Registered Veloped servers: " + serverRepository.findAll().size());
         }
 
         public void clear() {

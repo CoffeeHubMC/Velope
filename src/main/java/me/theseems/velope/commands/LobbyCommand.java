@@ -9,7 +9,6 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerInfo;
 import me.theseems.velope.Velope;
 import me.theseems.velope.config.user.VelopeConfig;
-import me.theseems.velope.history.RedirectHistoryRepository;
 import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.server.VelopedServerRepository;
 import me.theseems.velope.utils.ConnectionUtils;
@@ -27,8 +26,6 @@ public class LobbyCommand implements SimpleCommand {
     private VelopeConfig velopeConfig;
     @Inject
     private VelopedServerRepository serverRepository;
-    @Inject
-    private RedirectHistoryRepository historyRepository;
     @Inject
     private Velope velope;
 

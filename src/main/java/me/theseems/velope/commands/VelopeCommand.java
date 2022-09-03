@@ -25,7 +25,7 @@ import java.util.UUID;
 public class VelopeCommand implements SimpleCommand {
     public static final String LIST_SUBCOMMAND_USE_PERMISSION = "velope.list";
     public static final String RELOAD_SUBCOMMAND_USE_PERMISSION = "velope.reload";
-    public static final String HISTORY_SUBCOMMAND_USE_PERMISSION = "velope.history";
+    public static final String RECENT_SUBCOMMAND_USE_PERMISSION = "velope.recent";
 
     @Inject
     private VelopedServerRepository serverRepository;
@@ -115,8 +115,8 @@ public class VelopeCommand implements SimpleCommand {
                 }
                 break;
 
-            case "history":
-                if (!source.hasPermission(HISTORY_SUBCOMMAND_USE_PERMISSION)) {
+            case "recent":
+                if (!source.hasPermission(RECENT_SUBCOMMAND_USE_PERMISSION)) {
                     source.sendMessage(Component
                             .text("You don't have permission to use that command.")
                             .color(NamedTextColor.RED));
@@ -142,7 +142,9 @@ public class VelopeCommand implements SimpleCommand {
                 Optional<RedirectEntry> entryOptional = historyRepository.getLatestRedirect(playerUUID);
 
                 if (entryOptional.isEmpty()) {
-                    source.sendMessage(Component.text("No entries found.").color(NamedTextColor.RED));
+                    source.sendMessage(Component
+                            .text("No entries found.")
+                            .color(NamedTextColor.RED));
                     return;
                 }
 
@@ -150,13 +152,12 @@ public class VelopeCommand implements SimpleCommand {
 
                 LegacyComponentSerializer serializer = LegacyComponentSerializer.legacyAmpersand();
                 source.sendMessage(
-                        serializer.deserialize("&7Latest redirect:").append(Component.newline())
+                        serializer.deserialize("&7Latest Velope redirect:").append(Component.newline())
                                 .append(serializer.deserialize("&8\u22D9 &7From: &e" +
                                         (entry.getFrom() == null ? "<root>" : entry.getFrom().getName())))
                                 .append(Component.newline())
                                 .append(serializer.deserialize("&8\u22D8 &7To: &e" +
-                                        (entry.getTo() == null ? "<void>" : entry.getTo())))
-                                .append(Component.newline()));
+                                        (entry.getTo() == null ? "<void>" : entry.getTo()))));
                 break;
 
             default:
@@ -180,6 +181,10 @@ public class VelopeCommand implements SimpleCommand {
                         .append(source.hasPermission(RELOAD_SUBCOMMAND_USE_PERMISSION)
                                 ? miniMessage.deserialize("<yellow>/velope reload</yellow>")
                                 .append(Component.newline())
+                                : Component.empty())
+                        .append(source.hasPermission(RECENT_SUBCOMMAND_USE_PERMISSION)
+                                ? LegacyComponentSerializer.legacyAmpersand()
+                                .deserialize("&e/velope recent <player_name>")
                                 : Component.empty())
                         .append(source.hasPermission(StatusCommand.STATUS_COMMAND_USE_PERMISSION)
                                 ? LegacyComponentSerializer.legacyAmpersand()

@@ -13,11 +13,11 @@ def getVersionName = { ->
     return stdout.toString().trim()
 }
 ext {
-    dev_build = true
+    devBuild = true
 }
 
 group = 'me.theseems'
-version = ext.dev_build ? getVersionName() : "1.0.4"
+version = ext.devBuild ? getVersionName() : "1.0.4"
 
 
 repositories {

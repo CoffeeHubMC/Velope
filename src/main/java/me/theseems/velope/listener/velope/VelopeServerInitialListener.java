@@ -1,4 +1,4 @@
-package me.theseems.velope.listener;
+package me.theseems.velope.listener.velope;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -21,7 +21,7 @@ public class VelopeServerInitialListener {
     private VelopedServer velopedServer;
 
     @Subscribe
-    public void onPlayerJoin(PlayerChooseInitialServerEvent event) {
+    public void onInitialPick(PlayerChooseInitialServerEvent event) {
         RegisteredServer server = ConnectionUtils.findNearestAvailable(
                 velope.getProxyServer(),
                 velopedServer,

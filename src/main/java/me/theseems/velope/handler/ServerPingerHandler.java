@@ -72,7 +72,7 @@ public class ServerPingerHandler implements Runnable {
             }
 
             boolean onlineAlternative = Optional
-                    .ofNullable(velopeConfig.isFetchOnlineAlternativeEnabled())
+                    .ofNullable(velopeConfig.getFetchOnlineAlternativeEnabled())
                     .orElse(false);
 
             ServerStatus status = new ServerStatus(
