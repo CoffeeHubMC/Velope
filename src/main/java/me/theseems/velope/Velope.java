@@ -342,9 +342,21 @@ public class Velope {
                 VelopedServer velopedServer = velopedServerMap.get(group.getName());
 
                 VelopeCommandConfig config = group.getCommand();
+                if (config == null) {
+                    continue;
+                }
+                if (config.getLabel() == null) {
+                    velope.getLogger().warn("No label specified for command of group '" + group.getName() + "'");
+                    continue;
+                }
+
                 CommandManager commandManager = velope.getProxyServer().getCommandManager();
                 CommandMeta commandMeta = commandManager.metaBuilder(config.getLabel())
-                        .aliases(config.getAliases().toArray(String[]::new))
+                        .aliases(
+                                Optional.ofNullable(config.getAliases())
+                                        .map((aliases) -> aliases.toArray(String[]::new))
+                                        .orElse(new String[]{})
+                        )
                         .build();
 
                 SimpleCommand command = invocation -> {
@@ -378,7 +390,9 @@ public class Velope {
 
                 commandManager.register(commandMeta, command);
                 registeredCommandLabels.add(config.getLabel());
-                registeredCommandLabels.addAll(config.getAliases());
+                if (config.getAliases() != null) {
+                    registeredCommandLabels.addAll(config.getAliases());
+                }
             }
         }
 
