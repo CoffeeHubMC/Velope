@@ -122,3 +122,6 @@ Contact me if you face any issues either directly
 
 Discord: Crying Lightning#4888   
 Or by joining my cosy [Discord Server](https://theseems.ru/coffeehub/discord)
+
+## Thanks
+Lucifer_ (AdvancedPortals), cHRIS (Balancing) - for suggesting ideas & testing
