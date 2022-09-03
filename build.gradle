@@ -4,8 +4,21 @@ plugins {
     id "org.jetbrains.gradle.plugin.idea-ext" version "1.0.1"
 }
 
+def getVersionName = { ->
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        commandLine 'git', 'describe', '--tags'
+        standardOutput = stdout
+    }
+    return stdout.toString().trim()
+}
+ext {
+    dev_build = true
+}
+
 group = 'me.theseems'
-version = '1.0.3'
+version = ext.dev_build ? getVersionName() : "1.0.4"
+
 
 repositories {
     mavenCentral()
@@ -18,8 +31,16 @@ repositories {
 dependencies {
     compileOnly 'com.velocitypowered:velocity-api:3.1.1'
     annotationProcessor 'com.velocitypowered:velocity-api:3.1.1'
+
+    compileOnly 'org.projectlombok:lombok:1.18.24'
+    annotationProcessor 'org.projectlombok:lombok:1.18.24'
+
     implementation "net.kyori:adventure-text-minimessage:4.11.0"
+
+    testCompileOnly 'org.projectlombok:lombok:1.18.24'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
 }
+
 
 def targetJavaVersion = 11
 java {

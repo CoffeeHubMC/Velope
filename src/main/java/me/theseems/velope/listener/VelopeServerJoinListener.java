@@ -6,6 +6,8 @@ import com.velocitypowered.api.event.player.ServerPreConnectEvent;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerInfo;
 import me.theseems.velope.Velope;
+import me.theseems.velope.history.RedirectEntry;
+import me.theseems.velope.history.RedirectHistoryRepository;
 import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.server.VelopedServerRepository;
 import me.theseems.velope.utils.ConnectionUtils;
@@ -17,7 +19,9 @@ import static me.theseems.velope.utils.ConnectionUtils.findNearestAvailable;
 
 public class VelopeServerJoinListener {
     @Inject
-    private VelopedServerRepository repository;
+    private VelopedServerRepository serverRepository;
+    @Inject
+    private RedirectHistoryRepository historyRepository;
     @Inject
     private Velope velope;
 
@@ -26,19 +30,19 @@ public class VelopeServerJoinListener {
         Optional<VelopedServer> velopedServer = Optional.ofNullable(event.getOriginalServer())
                 .map(RegisteredServer::getServerInfo)
                 .map(ServerInfo::getName)
-                .map(info -> repository.getServer(info));
+                .map(info -> serverRepository.getServer(info));
 
         if (velopedServer.isEmpty()) {
             return;
         }
 
-        RegisteredServer registeredServer = findNearestAvailable(
-                repository,
+        RegisteredServer server = findNearestAvailable(
+                serverRepository,
                 velope.getProxyServer(),
                 event.getOriginalServer().getServerInfo().getName(),
                 ConnectionUtils.getExclusionListForPlayer(event.getPlayer()));
 
-        if (registeredServer == null) {
+        if (server == null) {
             event.setResult(ServerPreConnectEvent.ServerResult.denied());
             event.getPlayer().disconnect(Component.text("Sorry." +
                     " We have a problem finding the server for you. Please, try again later."));
@@ -49,6 +53,11 @@ public class VelopeServerJoinListener {
             return;
         }
 
-        event.setResult(ServerPreConnectEvent.ServerResult.allowed(registeredServer));
+        historyRepository.setLatestRedirect(new RedirectEntry(
+                event.getPlayer().getUniqueId(),
+                null,
+                server.getServerInfo().getName()
+        ));
+        event.setResult(ServerPreConnectEvent.ServerResult.allowed(server));
     }
 }

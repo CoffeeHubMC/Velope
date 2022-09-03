@@ -3,6 +3,8 @@ package me.theseems.velope.utils;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
+import me.theseems.velope.Velope;
+import me.theseems.velope.history.RedirectEntry;
 import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.server.VelopedServerRepository;
 import net.kyori.adventure.text.Component;
@@ -19,7 +21,7 @@ public class ConnectionUtils {
                 .getOptimalServer(velopedServer, getExclusionListForPlayer(player))
                 .flatMap(serverInfo -> proxyServer.getServer(serverInfo.getName()))
                 .ifPresentOrElse(
-                        (server) -> connectAndSupervise(player, server),
+                        (server) -> connectAndSupervise(player, server, velopedServer),
                         () -> player.sendMessage(
                                 Component.text("Sorry. Could not find destination. Try again later.")
                                         .color(NamedTextColor.RED)
@@ -28,6 +30,20 @@ public class ConnectionUtils {
     }
 
     public static void connectAndSupervise(Player player, RegisteredServer registeredServer) {
+        connectAndSupervise(player, registeredServer, null);
+    }
+
+    public static void connectAndSupervise(Player player, RegisteredServer registeredServer, VelopedServer from) {
+        if (registeredServer == null) {
+            return;
+        }
+
+        Velope.getHistoryRepository().setLatestRedirect(new RedirectEntry(
+                player.getUniqueId(),
+                from,
+                registeredServer.getServerInfo().getName()
+        ));
+
         player.createConnectionRequest(registeredServer)
                 .connect()
                 .whenCompleteAsync((result, throwable) -> {

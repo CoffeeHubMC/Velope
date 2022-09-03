@@ -9,6 +9,7 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerInfo;
 import me.theseems.velope.Velope;
 import me.theseems.velope.config.user.VelopeConfig;
+import me.theseems.velope.history.RedirectHistoryRepository;
 import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.server.VelopedServerRepository;
 import me.theseems.velope.utils.ConnectionUtils;
@@ -25,7 +26,9 @@ public class LobbyCommand implements SimpleCommand {
     @Inject
     private VelopeConfig velopeConfig;
     @Inject
-    private VelopedServerRepository velopedServerRepository;
+    private VelopedServerRepository serverRepository;
+    @Inject
+    private RedirectHistoryRepository historyRepository;
     @Inject
     private Velope velope;
 
@@ -54,12 +57,12 @@ public class LobbyCommand implements SimpleCommand {
         if (currentServerName == null) {
             destination = findWithBalancer(
                     velope.getProxyServer(),
-                    velopedServerRepository.getServer(velopeConfig.getRootGroup()),
+                    serverRepository.getServer(velopeConfig.getRootGroup()),
                     excluded);
         } else {
             destination = findNearestAvailable(
                     velope.getProxyServer(),
-                    velopedServerRepository.findParent(currentServerName)
+                    serverRepository.findParent(currentServerName)
                             .map(VelopedServer::getParent)
                             .orElse(null),
                     excluded);

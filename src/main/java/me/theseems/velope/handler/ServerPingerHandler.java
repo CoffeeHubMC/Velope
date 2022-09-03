@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerPing;
 import me.theseems.velope.Velope;
+import me.theseems.velope.config.user.VelopeConfig;
 import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.server.VelopedServerRepository;
 import me.theseems.velope.status.ServerStatus;
@@ -23,6 +24,8 @@ public class ServerPingerHandler implements Runnable {
     private VelopedServerRepository velopedServerRepository;
     @Inject
     private Velope velope;
+    @Inject
+    private VelopeConfig velopeConfig;
 
     @Inject
     @Named("cacheTtl")
@@ -68,11 +71,17 @@ public class ServerPingerHandler implements Runnable {
                         "Could not find players on server '" + serverName + "'");
             }
 
+            boolean onlineAlternative = Optional
+                    .ofNullable(velopeConfig.isFetchOnlineAlternativeEnabled())
+                    .orElse(false);
+
             ServerStatus status = new ServerStatus(
                     registeredServer.getServerInfo(),
                     serverPing.getDescriptionComponent(),
                     available,
-                    serverPing.getPlayers().map(ServerPing.Players::getOnline).orElse(0),
+                    onlineAlternative
+                            ? registeredServer.getPlayersConnected().size()
+                            : serverPing.getPlayers().map(ServerPing.Players::getOnline).orElse(0),
                     serverPing.getPlayers().map(ServerPing.Players::getMax).orElse(0));
 
             statusRepository.saveStatus(status);
