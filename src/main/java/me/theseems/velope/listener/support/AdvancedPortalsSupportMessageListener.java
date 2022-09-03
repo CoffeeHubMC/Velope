@@ -68,6 +68,7 @@ public class AdvancedPortalsSupportMessageListener {
 
                 RegisteredServer registeredServer = ConnectionUtils.findNearestAvailable(
                         velope.getProxyServer(),
+                        player.getUniqueId(),
                         server,
                         Collections.emptyList());
 

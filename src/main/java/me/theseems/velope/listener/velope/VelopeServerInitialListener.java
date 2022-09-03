@@ -24,6 +24,7 @@ public class VelopeServerInitialListener {
     public void onInitialPick(PlayerChooseInitialServerEvent event) {
         RegisteredServer server = ConnectionUtils.findNearestAvailable(
                 velope.getProxyServer(),
+                event.getPlayer().getUniqueId(),
                 velopedServer,
                 ConnectionUtils.getExclusionListForPlayer(event.getPlayer()));
         if (server == null) {

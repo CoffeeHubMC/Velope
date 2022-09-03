@@ -11,6 +11,6 @@ public class HistoryDisconnectListener {
 
     @Subscribe
     public void onInitialPick(DisconnectEvent event) {
-        historyRepository.remove(event.getPlayer().getUniqueId());
+        historyRepository.removeLastRedirect(event.getPlayer().getUniqueId());
     }
 }

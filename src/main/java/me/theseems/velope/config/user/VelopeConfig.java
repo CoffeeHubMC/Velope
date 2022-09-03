@@ -19,6 +19,7 @@ public class VelopeConfig {
     private final String initialGroup;
     private final Boolean redirectIfUnknownEnabled;
     private final Boolean fetchOnlineAlternativeEnabled;
+    private final VelopeFailureConfig velopeFailureConfig;
 
     public VelopeConfig() {
         this.integrationsConfig = null;
@@ -28,5 +29,6 @@ public class VelopeConfig {
         this.initialGroup = null;
         this.redirectIfUnknownEnabled = true;
         this.fetchOnlineAlternativeEnabled = false;
+        this.velopeFailureConfig = new VelopeFailureConfig();
     }
 }

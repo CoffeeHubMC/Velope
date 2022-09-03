@@ -1,5 +1,6 @@
 package me.theseems.velope.utils;
 
+import com.velocitypowered.api.proxy.ConnectionRequestBuilder;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
@@ -13,12 +14,13 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.UUID;
 
 public class ConnectionUtils {
     public static void connectAndSupervise(ProxyServer proxyServer, Player player, VelopedServer velopedServer) {
         velopedServer.getBalanceStrategy()
                 .getStrategy()
-                .getOptimalServer(velopedServer, getExclusionListForPlayer(player))
+                .getOptimalServer(velopedServer, getExclusionListForPlayer(player), player.getUniqueId())
                 .flatMap(serverInfo -> proxyServer.getServer(serverInfo.getName()))
                 .ifPresentOrElse(
                         (server) -> connectAndSupervise(player, server, velopedServer),
@@ -48,6 +50,13 @@ public class ConnectionUtils {
                 .connect()
                 .whenCompleteAsync((result, throwable) -> {
                     if (!result.isSuccessful() || throwable != null) {
+                        if (result.getStatus() != ConnectionRequestBuilder.Status.ALREADY_CONNECTED
+                        && result.getStatus() != ConnectionRequestBuilder.Status.CONNECTION_IN_PROGRESS) {
+                            Velope.getHistoryRepository().addFailure(
+                                    player.getUniqueId(),
+                                    registeredServer.getServerInfo().getName());
+                        }
+
                         player.sendMessage(
                                 Component.text("Cannot connect you: ")
                                         .color(NamedTextColor.RED)
@@ -61,6 +70,7 @@ public class ConnectionUtils {
 
     public static RegisteredServer findNearestAvailable(VelopedServerRepository repository,
                                                         ProxyServer proxyServer,
+                                                        UUID playerUUID,
                                                         String serverName,
                                                         Collection<String> excluded) {
         if (serverName == null) {
@@ -68,10 +78,17 @@ public class ConnectionUtils {
         }
 
         VelopedServer parent = repository.getParent(serverName);
-        return findNearestAvailable(proxyServer, parent == null ? repository.getServer(serverName) : parent, excluded);
+        return findNearestAvailable(
+                proxyServer,
+                playerUUID,
+                parent == null
+                        ? repository.getServer(serverName)
+                        : parent,
+                excluded);
     }
 
     public static RegisteredServer findNearestAvailable(ProxyServer proxyServer,
+                                                        UUID playerUUID,
                                                         VelopedServer origin,
                                                         Collection<String> excluded) {
         if (origin == null) {
@@ -82,7 +99,7 @@ public class ConnectionUtils {
         while (origin != null) {
             Optional<RegisteredServer> server = origin.getBalanceStrategy()
                     .getStrategy()
-                    .getOptimalServer(origin, excluded)
+                    .getOptimalServer(origin, excluded, playerUUID)
                     .flatMap(serverInfo -> proxyServer.getServer(serverInfo.getName()));
 
             if (server.isPresent()) {
@@ -104,11 +121,12 @@ public class ConnectionUtils {
 
     public static RegisteredServer findWithBalancer(ProxyServer proxyServer,
                                                     VelopedServer velopedServer,
+                                                    UUID playerUUID,
                                                     Collection<String> excluded) {
         return velopedServer
                 .getBalanceStrategy()
                 .getStrategy()
-                .getOptimalServer(velopedServer, excluded)
+                .getOptimalServer(velopedServer, excluded, playerUUID)
                 .flatMap(serverInfo -> proxyServer.getServer(serverInfo.getName()))
                 .orElse(null);
     }

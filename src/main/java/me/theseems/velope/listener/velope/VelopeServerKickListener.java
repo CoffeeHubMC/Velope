@@ -16,6 +16,7 @@ import net.kyori.adventure.text.Component;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 import static me.theseems.velope.utils.ConnectionUtils.findNearestAvailable;
 import static me.theseems.velope.utils.ConnectionUtils.findWithBalancer;
@@ -40,12 +41,14 @@ public class VelopeServerKickListener {
             destination = findWithBalancer(
                     velope.getProxyServer(),
                     serverRepository.getServer(velopeConfig.getRootGroup()),
+                    event.getPlayer().getUniqueId(),
                     excluded);
         } else {
             excluded.add(currentServerName);
 
             destination = findNearestAvailable(
                     velope.getProxyServer(),
+                    event.getPlayer().getUniqueId(),
                     serverRepository.findParent(currentServerName)
                             .map(VelopedServer::getParent)
                             .orElse(null),
@@ -56,6 +59,7 @@ public class VelopeServerKickListener {
                 destination = findWithBalancer(
                         velope.getProxyServer(),
                         serverRepository.getServer(velopeConfig.getRootGroup()),
+                        event.getPlayer().getUniqueId(),
                         excluded);
             }
         }
@@ -69,6 +73,11 @@ public class VelopeServerKickListener {
                 null,
                 destination.getServerInfo().getName()
         ));
+
+        UUID playerUUID = event.getPlayer().getUniqueId();
+        String serverName = event.getServer().getServerInfo().getName();
+
+        historyRepository.addFailure(playerUUID, serverName);
         event.setResult(KickedFromServerEvent.RedirectPlayer.create(
                 destination,
                 event.getServerKickReason().orElse(Component.empty())));
