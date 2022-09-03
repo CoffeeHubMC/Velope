@@ -1,4 +1,7 @@
 {
+  "integrations": {
+    "advancedPortalsSupportEnabled": false
+  },
   "groups": [
     {
       "name": "hubs",
@@ -30,6 +33,7 @@
   ],
   "rootGroup": "hubs",
   "initialGroup": "hubs",
+  "fetchOnlineAlternativeEnabled": false,
   "pingerSettings": {
     "cacheTtl": 10000,
     "pingInterval": 10000,

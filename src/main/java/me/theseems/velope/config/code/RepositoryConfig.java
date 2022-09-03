@@ -1,6 +1,8 @@
 package me.theseems.velope.config.code;
 
 import com.google.inject.AbstractModule;
+import me.theseems.velope.history.MemoryRedirectHistoryRepository;
+import me.theseems.velope.history.RedirectHistoryRepository;
 import me.theseems.velope.server.MemoryVelopedServerRepository;
 import me.theseems.velope.server.VelopedServerRepository;
 import me.theseems.velope.status.MemoryServerStatusRepository;
@@ -13,5 +15,7 @@ public class RepositoryConfig extends AbstractModule {
                 .toInstance(new MemoryServerStatusRepository());
         bind(VelopedServerRepository.class)
                 .toInstance(new MemoryVelopedServerRepository());
+        bind(RedirectHistoryRepository.class)
+                .toInstance(new MemoryRedirectHistoryRepository());
     }
 }

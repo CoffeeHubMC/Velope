@@ -1,6 +1,6 @@
 # Velope
 
-Simple Velocity (only) plugin for basic server balancing
+Simple Velocity plugin for server balancing & organising.
 
 ## Features
 
@@ -8,13 +8,27 @@ Simple Velocity (only) plugin for basic server balancing
 - Kick handler
 - Lobby command (go to one of the current server's parent group)
 - List of veloped servers, smart config reload (WIP)
-- Initial sever group (instead of just one static server, players will be connected to the group's balancer determined server on join)
+- Initial sever group (instead of just one static server, players will be connected to the group's balancer determined
+  server on join)
+- [AdvancedPortals](https://www.spigotmc.org/resources/advanced-portals.14356/) integration.
+
+### AdvancedPortals integration
+
+If you have identically named destinations on all the group's servers you can specify its name for the
+portal (bungee:<group_name>), and it will work on any server (inside the group). Be sure to enable it:
+```json
+  "integrations": {
+    "advancedPortalsSupportEnabled": true
+  },
+...
+```
 
 ## Commands
 
 - /velope - Get info about plugin as well as get a list of accessible commands | (no permission)
 - /velope list - Get list of all veloped servers (groups) there are | velope.list
 - /velope reload - Reload config | velope.reload
+- /velope recent <player_name> - View the most recent redirect from Velope | velope.recent
 - /vstatus <server_name> - Get status of either regular or veloped server | velope.status.use
 - /lobby (/leave, /back) - Connect to parent veloped Server (if there's any) | velope.use.lobby
 
@@ -24,6 +38,9 @@ Example configuration:
 
 ```json
 {
+  "integrations": {
+    "advancedPortalsSupportEnabled": false
+  },
   "groups": [
     {
       "name": "hubs",
@@ -55,6 +72,7 @@ Example configuration:
   ],
   "rootGroup": "hubs",
   "initialGroup": "hubs",
+  "fetchOnlineAlternativeEnabled": false,
   "pingerSettings": {
     "cacheTtl": 10000,
     "pingInterval": 10000,
@@ -77,9 +95,15 @@ Initial group is used when player initially connects to the proxy: instead of ju
 connected to the group's balancer determined server.
 
 In pinger settings section you can change:
+
 - Cache TTL - how long server information should be cached until it will be refreshed
 - Ping Interval - specifies the time interval servers are pinged to retrieve their info
 - Log Unavailable Cooldown - specifies the cooldown for logging unsuccessful pings
+
+You can specify whether Velope should grab online from:
+
+- `"fetchOnlineAlternativeEnabled": false` from ping (might include fake players)
+- `"fetchOnlineAlternativeEnabled": true` from Velocity API
 
 ### Balancer Strategies
 
@@ -87,12 +111,17 @@ For the moment there are two basic balancer strategies:
 
 - FIRST - created for testing purposes, it always outputs the first server that has been associated with a group
 - HIGHEST - basically tries to fill the server: outputs server with the largest amount of players connected
-- LOWEST - outputs server with the least amount of players connected
+- LOWEST - outputs server with the least amount of players connected'
+- RANDOM - outputs random available server
 
 ## Support
-This plugin is somewhat just a bit better than "proof-of-concept" so there's a lot of things to hone.  
 
-Contact me if you face any issues either directly  
+This plugin is somewhat just a bit better than "proof-of-concept" so there's a lot of things to hone.
+
+Contact me if you face any issues either directly
 
 Discord: Crying Lightning#4888   
-Or join my cosy (empty) [Discord Server](https://theseems.ru/coffeehub/discord)
+Or by joining my cosy [Discord Server](https://theseems.ru/coffeehub/discord)
+
+## Thanks
+Lucifer_ (AdvancedPortals), cHRIS (Balancing) - for suggesting ideas & testing

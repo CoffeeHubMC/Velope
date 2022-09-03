@@ -28,14 +28,14 @@ import me.theseems.velope.config.code.AdventureConfig;
 import me.theseems.velope.config.code.PluginConfig;
 import me.theseems.velope.config.code.RepositoryConfig;
 import me.theseems.velope.config.code.VelopeUserConfig;
-import me.theseems.velope.config.user.VelopeCommandConfig;
-import me.theseems.velope.config.user.VelopeConfig;
-import me.theseems.velope.config.user.VelopeGroupConfig;
-import me.theseems.velope.config.user.VelopePingerConfig;
+import me.theseems.velope.config.user.*;
 import me.theseems.velope.handler.ServerPingerHandler;
-import me.theseems.velope.listener.VelopeServerInitialListener;
-import me.theseems.velope.listener.VelopeServerJoinListener;
-import me.theseems.velope.listener.VelopeServerKickListener;
+import me.theseems.velope.history.RedirectHistoryRepository;
+import me.theseems.velope.listener.history.HistoryDisconnectListener;
+import me.theseems.velope.listener.support.AdvancedPortalsSupportMessageListener;
+import me.theseems.velope.listener.velope.VelopeServerInitialListener;
+import me.theseems.velope.listener.velope.VelopeServerJoinListener;
+import me.theseems.velope.listener.velope.VelopeServerKickListener;
 import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.server.VelopedServerRepository;
 import me.theseems.velope.status.ServerStatus;
@@ -240,13 +240,13 @@ public class Velope {
 
     public static class RepositorySetup {
         @Inject
-        private VelopedServerRepository velopedServerRepository;
+        private VelopedServerRepository serverRepository;
         @Inject
         private VelopeConfig velopeConfig;
         @Inject
         private Velope velope;
         @Inject
-        private ServerStatusRepository serverStatusRepository;
+        private ServerStatusRepository statusRepository;
 
         private final List<RegisteredServer> registeredServers = new ArrayList<>();
         private final List<String> registeredCommandLabels = new ArrayList<>();
@@ -269,7 +269,7 @@ public class Velope {
 
                     serverInfoList.add(registeredServer.getServerInfo().getName());
                     registeredServer.ping().whenCompleteAsync((serverPing, throwable) ->
-                            serverStatusRepository.saveStatus(
+                            statusRepository.saveStatus(
                                     new ServerStatus(
                                             registeredServer.getServerInfo(),
                                             serverPing.getDescriptionComponent(),
@@ -323,7 +323,7 @@ public class Velope {
 
         private void saveToRepository(Map<String, VelopedServer> velopedServerMap) {
             for (VelopedServer value : velopedServerMap.values()) {
-                velopedServerRepository.addServer(value);
+                serverRepository.addServer(value);
             }
         }
 
@@ -342,9 +342,21 @@ public class Velope {
                 VelopedServer velopedServer = velopedServerMap.get(group.getName());
 
                 VelopeCommandConfig config = group.getCommand();
+                if (config == null) {
+                    continue;
+                }
+                if (config.getLabel() == null) {
+                    velope.getLogger().warn("No label specified for command of group '" + group.getName() + "'");
+                    continue;
+                }
+
                 CommandManager commandManager = velope.getProxyServer().getCommandManager();
                 CommandMeta commandMeta = commandManager.metaBuilder(config.getLabel())
-                        .aliases(config.getAliases().toArray(String[]::new))
+                        .aliases(
+                                Optional.ofNullable(config.getAliases())
+                                        .map((aliases) -> aliases.toArray(String[]::new))
+                                        .orElse(new String[]{})
+                        )
                         .build();
 
                 SimpleCommand command = invocation -> {
@@ -359,10 +371,11 @@ public class Velope {
                         return;
                     }
 
-                    Optional<VelopedServer> currentServer = ((Player) invocation.source())
+                    Player player = (Player) invocation.source();
+                    Optional<VelopedServer> currentServer = player
                             .getCurrentServer()
                             .map(ServerConnection::getServer)
-                            .map(registeredServer -> velopedServerRepository
+                            .map(registeredServer -> serverRepository
                                     .getParent(registeredServer.getServerInfo().getName()));
 
                     if (currentServer.isPresent() && currentServer.get().getName().equals(velopedServer.getName())) {
@@ -372,12 +385,14 @@ public class Velope {
                         return;
                     }
 
-                    connectAndSupervise(velope.getProxyServer(), (Player) invocation.source(), velopedServer);
+                    connectAndSupervise(velope.getProxyServer(), player, velopedServer);
                 };
 
                 commandManager.register(commandMeta, command);
                 registeredCommandLabels.add(config.getLabel());
-                registeredCommandLabels.addAll(config.getAliases());
+                if (config.getAliases() != null) {
+                    registeredCommandLabels.addAll(config.getAliases());
+                }
             }
         }
 
@@ -405,15 +420,66 @@ public class Velope {
             velope.getProxyServer().getEventManager().register(velope, listener);
         }
 
+        private void enableAdvancedPortalsSupport() {
+            velope.getLogger().info("Setting up AdvancedPortals message listener");
+            Object listener = injector.getInstance(AdvancedPortalsSupportMessageListener.class);
+            listeners.add(listener);
+
+            velope.getProxyServer().getEventManager().register(velope, listener);
+        }
+
+        private void setupAdvancedPortalsSupport() {
+            boolean pluginFound = velope.getProxyServer()
+                    .getPluginManager()
+                    .isLoaded("advancedportals");
+
+            Optional.ofNullable(velopeConfig.getIntegrationsConfig())
+                    .map(VelopeIntegrationConfig::isAdvancedPortalsSupportEnabled)
+                    .ifPresentOrElse(
+                            (value) -> {
+                                if (value) {
+                                    if (!pluginFound) {
+                                        velope.getLogger().warn("AdvancedPortals plugin is not found @ Velocity." +
+                                                " Install it there in order to enable integration (support).");
+                                        return;
+                                    }
+
+                                    enableAdvancedPortalsSupport();
+                                }
+                            }, () -> {
+                                if (pluginFound) {
+                                    velope.getLogger()
+                                            .info("AdvancedPortals plugin is found. Support is enabled by default." +
+                                                    " You can disable it in 'integration' section @ config.");
+
+                                    enableAdvancedPortalsSupport();
+                                }
+                            }
+                    );
+        }
+
+        private void setupDisconnectListener() {
+            Object listener = injector.getInstance(HistoryDisconnectListener.class);
+            listeners.add(listener);
+
+            velope.getProxyServer().getEventManager().register(velope, listener);
+        }
+
         public void setup() {
             Map<String, VelopedServer> velopedServerMap = new HashMap<>();
+
+            // Generic startup pipeline
             fetchServers(velopedServerMap);
             linkParents(velopedServerMap);
             saveToRepository(velopedServerMap);
             registerGroupCommands(velopedServerMap);
+            setupDisconnectListener();
             setupInitialListener(velopedServerMap);
 
-            velope.getLogger().info("Registered balancer servers: " + velopedServerRepository.findAll().size());
+            // Support
+            setupAdvancedPortalsSupport();
+
+            velope.getLogger().info("Registered Veloped servers: " + serverRepository.findAll().size());
         }
 
         public void clear() {
@@ -442,6 +508,10 @@ public class Velope {
 
     public static VelopedServerRepository getServerRepository() {
         return injector.getInstance(VelopedServerRepository.class);
+    }
+
+    public static RedirectHistoryRepository getHistoryRepository() {
+        return injector.getInstance(RedirectHistoryRepository.class);
     }
 
     public static VelopeConfig getVelopeConfig() {

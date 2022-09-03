@@ -5,10 +5,11 @@ import me.theseems.velope.Velope;
 import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.status.ServerStatus;
 
-import java.util.Collection;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public enum BalanceStrategy {
+
     FIRST((server, excluded) -> {
         Optional<ServerInfo> result = server.getGroup().stream()
                 .findFirst()
@@ -99,6 +100,26 @@ public enum BalanceStrategy {
 
         return Optional.ofNullable(result)
                 .map(ServerStatus::getServerInfo);
+    }),
+    RANDOM((server, excluded) -> {
+        if (server == null || server.getGroup().isEmpty()) {
+            return Optional.empty();
+        }
+
+        List<ServerInfo> candidates = server.getGroup().stream()
+                .map(example -> Velope.getStatusRepository().getStatus(example))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .filter(example -> example.isAvailable() && example.getPlayerCount() + 1 < example.getMaxPlayerCount())
+                .map(ServerStatus::getServerInfo)
+                .filter(serverInfo -> !excluded.contains(serverInfo.getName()))
+                .collect(Collectors.toList());
+
+        if (candidates.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(candidates.get(new Random().nextInt(candidates.size())));
     });
 
     public interface BaseBalanceStrategy {

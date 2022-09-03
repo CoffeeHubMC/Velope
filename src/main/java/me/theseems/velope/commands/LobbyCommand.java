@@ -25,7 +25,7 @@ public class LobbyCommand implements SimpleCommand {
     @Inject
     private VelopeConfig velopeConfig;
     @Inject
-    private VelopedServerRepository velopedServerRepository;
+    private VelopedServerRepository serverRepository;
     @Inject
     private Velope velope;
 
@@ -54,12 +54,12 @@ public class LobbyCommand implements SimpleCommand {
         if (currentServerName == null) {
             destination = findWithBalancer(
                     velope.getProxyServer(),
-                    velopedServerRepository.getServer(velopeConfig.getRootGroup()),
+                    serverRepository.getServer(velopeConfig.getRootGroup()),
                     excluded);
         } else {
             destination = findNearestAvailable(
                     velope.getProxyServer(),
-                    velopedServerRepository.findParent(currentServerName)
+                    serverRepository.findParent(currentServerName)
                             .map(VelopedServer::getParent)
                             .orElse(null),
                     excluded);

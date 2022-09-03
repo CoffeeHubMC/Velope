@@ -8,6 +8,8 @@ import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.ServerInfo;
 import me.theseems.velope.BuildConstants;
 import me.theseems.velope.Velope;
+import me.theseems.velope.history.RedirectEntry;
+import me.theseems.velope.history.RedirectHistoryRepository;
 import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.server.VelopedServerRepository;
 import net.kyori.adventure.text.Component;
@@ -17,13 +19,18 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 import java.util.Collection;
+import java.util.Optional;
+import java.util.UUID;
 
 public class VelopeCommand implements SimpleCommand {
     public static final String LIST_SUBCOMMAND_USE_PERMISSION = "velope.list";
     public static final String RELOAD_SUBCOMMAND_USE_PERMISSION = "velope.reload";
+    public static final String RECENT_SUBCOMMAND_USE_PERMISSION = "velope.recent";
 
     @Inject
     private VelopedServerRepository serverRepository;
+    @Inject
+    private RedirectHistoryRepository historyRepository;
     @Inject
     private Velope velope;
     @Inject
@@ -108,6 +115,51 @@ public class VelopeCommand implements SimpleCommand {
                 }
                 break;
 
+            case "recent":
+                if (!source.hasPermission(RECENT_SUBCOMMAND_USE_PERMISSION)) {
+                    source.sendMessage(Component
+                            .text("You don't have permission to use that command.")
+                            .color(NamedTextColor.RED));
+                    return;
+                }
+                if (args.length == 1) {
+                    source.sendMessage(Component
+                            .text("Please, specify the player's name.")
+                            .color(NamedTextColor.RED));
+                    return;
+                }
+
+                String playerName = args[1];
+                Optional<Player> optionalPlayer = velope.getProxyServer().getPlayer(playerName);
+                if (optionalPlayer.isEmpty()) {
+                    source.sendMessage(Component
+                            .text("Requested player is not found.")
+                            .color(NamedTextColor.RED));
+                    return;
+                }
+
+                UUID playerUUID = optionalPlayer.get().getUniqueId();
+                Optional<RedirectEntry> entryOptional = historyRepository.getLatestRedirect(playerUUID);
+
+                if (entryOptional.isEmpty()) {
+                    source.sendMessage(Component
+                            .text("No entries found.")
+                            .color(NamedTextColor.RED));
+                    return;
+                }
+
+                RedirectEntry entry = entryOptional.get();
+
+                LegacyComponentSerializer serializer = LegacyComponentSerializer.legacyAmpersand();
+                source.sendMessage(
+                        serializer.deserialize("&7Latest Velope redirect:").append(Component.newline())
+                                .append(serializer.deserialize("&8\u22D9 &7From: &e" +
+                                        (entry.getFrom() == null ? "<root>" : entry.getFrom().getName())))
+                                .append(Component.newline())
+                                .append(serializer.deserialize("&8\u22D8 &7To: &e" +
+                                        (entry.getTo() == null ? "<void>" : entry.getTo()))));
+                break;
+
             default:
                 sendAbout(source);
                 break;
@@ -129,6 +181,10 @@ public class VelopeCommand implements SimpleCommand {
                         .append(source.hasPermission(RELOAD_SUBCOMMAND_USE_PERMISSION)
                                 ? miniMessage.deserialize("<yellow>/velope reload</yellow>")
                                 .append(Component.newline())
+                                : Component.empty())
+                        .append(source.hasPermission(RECENT_SUBCOMMAND_USE_PERMISSION)
+                                ? LegacyComponentSerializer.legacyAmpersand()
+                                .deserialize("&e/velope recent <player_name>")
                                 : Component.empty())
                         .append(source.hasPermission(StatusCommand.STATUS_COMMAND_USE_PERMISSION)
                                 ? LegacyComponentSerializer.legacyAmpersand()
