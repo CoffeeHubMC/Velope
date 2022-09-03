@@ -20,6 +20,11 @@ pipeline {
                 }
             }
         }
+        stage('Fetch tags') {
+            steps {
+                sh script: 'git fetch -t', label: 'Fetch tags'
+            }
+        }
         stage('Build') {
             steps {
                 sh script: 'chmod +x gradlew && ./gradlew build', label: 'Build project and make jar'

@@ -1,6 +1,6 @@
 {
   "integrations": {
-    "advancedPortalsSupportEnabled": true
+    "advancedPortalsSupportEnabled": false
   },
   "groups": [
     {
