@@ -81,7 +81,7 @@ Example configuration:
   "failureSettings": {
     "maxFailures": 2,
     "failureCleanInterval": 45000
-  },
+  }
 }
 ```
 
