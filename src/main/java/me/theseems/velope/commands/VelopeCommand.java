@@ -196,6 +196,7 @@ public class VelopeCommand implements SimpleCommand {
                         .append(source.hasPermission(RECENT_SUBCOMMAND_USE_PERMISSION)
                                 ? LegacyComponentSerializer.legacyAmpersand()
                                 .deserialize("&e/velope recent <player_name>")
+                                .append(Component.newline())
                                 : Component.empty())
                         .append(source.hasPermission(StatusCommand.STATUS_COMMAND_USE_PERMISSION)
                                 ? LegacyComponentSerializer.legacyAmpersand()
