@@ -16,10 +16,11 @@ Simple Velocity plugin for server balancing & organising.
 
 If you have identically named destinations on all the group's servers you can specify its name for the
 portal (bungee:<group_name>), and it will work on any server (inside the group). Be sure to enable it:
+
 ```json
   "integrations": {
-    "advancedPortalsSupportEnabled": true
-  },
+"advancedPortalsSupportEnabled": true
+},
 ...
 ```
 
@@ -41,27 +42,25 @@ Example configuration:
   "integrations": {
     "advancedPortalsSupportEnabled": false
   },
+  "failureSettings": {
+    "maxFailures": 2,
+    "failureCleanInterval": 45000
+  },
   "groups": [
     {
       "name": "hubs",
-      "servers": [
-        "hub0"
-      ],
+      "servers": ["hub0", "hub1"],
       "balanceStrategy": "HIGHEST",
       "command": {
-        "label": "hub",
-        "aliases": [
-          "root"
-        ]
+        "label": "hub"
       }
     },
     {
       "name": "bedwars_lobbies",
-      "servers": [
-        "bwlobby0"
-      ],
+      "servers": ["bwlobby0"],
       "balanceStrategy": "LOWEST",
       "parent": "hubs",
+      "omitFakeServer": true,
       "command": {
         "label": "bedwars",
         "aliases": [
@@ -77,15 +76,12 @@ Example configuration:
     "cacheTtl": 10000,
     "pingInterval": 10000,
     "logUnavailableCooldown": 120000
-  },
-  "failureSettings": {
-    "maxFailures": 2,
-    "failureCleanInterval": 45000
   }
 }
 ```
 
-Here you define server groups. Each server group will be represented with its own Velocity server, which I call "
+Here you define server groups. Each server group will be represented with its own Velocity server (if `omitFakeServer`
+is not set to `true`), which I call "
 Veloped" server.
 
 Name of Veloped server is equal to the name of the group. When the player connects to one of those servers,
@@ -133,4 +129,5 @@ Discord: Crying Lightning#4888
 Or by joining my cosy [Discord Server](https://theseems.ru/coffeehub/discord)
 
 ## Thanks
+
 Lucifer_ (AdvancedPortals), cHRIS (Balancing) - for suggesting ideas & testing
