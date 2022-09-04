@@ -77,7 +77,11 @@ Example configuration:
     "cacheTtl": 10000,
     "pingInterval": 10000,
     "logUnavailableCooldown": 120000
-  }
+  },
+  "failureSettings": {
+    "maxFailures": 2,
+    "failureCleanInterval": 45000
+  },
 }
 ```
 
@@ -99,6 +103,11 @@ In pinger settings section you can change:
 - Cache TTL - how long server information should be cached until it will be refreshed
 - Ping Interval - specifies the time interval servers are pinged to retrieve their info
 - Log Unavailable Cooldown - specifies the cooldown for logging unsuccessful pings
+
+In failure settings section you can change:
+
+- Max Failures - the amount of failures after which player is going to be disconnected (KickHandler)
+- Failure Clean Interval - interval of recorded failure's purge **(milliseconds)**
 
 You can specify whether Velope should grab online from:
 

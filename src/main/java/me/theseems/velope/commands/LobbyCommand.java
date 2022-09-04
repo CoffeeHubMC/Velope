@@ -55,10 +55,12 @@ public class LobbyCommand implements SimpleCommand {
             destination = findWithBalancer(
                     velope.getProxyServer(),
                     serverRepository.getServer(velopeConfig.getRootGroup()),
+                    player.getUniqueId(),
                     excluded);
         } else {
             destination = findNearestAvailable(
                     velope.getProxyServer(),
+                    player.getUniqueId(),
                     serverRepository.findParent(currentServerName)
                             .map(VelopedServer::getParent)
                             .orElse(null),

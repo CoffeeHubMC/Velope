@@ -12,6 +12,7 @@ import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.server.VelopedServerRepository;
 import me.theseems.velope.utils.ConnectionUtils;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 
 import java.util.Optional;
 
@@ -39,13 +40,20 @@ public class VelopeServerJoinListener {
         RegisteredServer server = findNearestAvailable(
                 serverRepository,
                 velope.getProxyServer(),
+                event.getPlayer().getUniqueId(),
                 event.getOriginalServer().getServerInfo().getName(),
                 ConnectionUtils.getExclusionListForPlayer(event.getPlayer()));
 
         if (server == null) {
             event.setResult(ServerPreConnectEvent.ServerResult.denied());
-            event.getPlayer().disconnect(Component.text("Sorry." +
-                    " We have a problem finding the server for you. Please, try again later."));
+            event.getPlayer().sendMessage(
+                    Component.text("Sorry." +
+                                    " We have a problem finding the server for you. Please, try again later.")
+                            .color(NamedTextColor.RED));
+
+            historyRepository.addFailure(
+                    event.getPlayer().getUniqueId(),
+                    event.getOriginalServer().getServerInfo().getName());
             velope.getLogger().warn(String.format("No server found for player '%s' @ %s from %s",
                     event.getPlayer().getUsername(),
                     velopedServer.get().getName(),

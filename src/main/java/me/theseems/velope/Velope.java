@@ -29,6 +29,7 @@ import me.theseems.velope.config.code.PluginConfig;
 import me.theseems.velope.config.code.RepositoryConfig;
 import me.theseems.velope.config.code.VelopeUserConfig;
 import me.theseems.velope.config.user.*;
+import me.theseems.velope.handler.FailureHistoryWipeHandler;
 import me.theseems.velope.handler.ServerPingerHandler;
 import me.theseems.velope.history.RedirectHistoryRepository;
 import me.theseems.velope.listener.history.HistoryDisconnectListener;
@@ -74,6 +75,8 @@ public class Velope {
     private static final long LOG_UNAVAILABLE_COOLDOWN_HARD_MIN = 3000L;
     private static final long LOG_UNAVAILABLE_COOLDOWN_DEFAULT = 120_000L;
 
+    private static final long WIPER_INTERVAL_HARD_MIN = 15000L;
+
     private static Velope velope;
     private static Injector injector;
     private static VelopeConfig velopeConfig;
@@ -83,6 +86,7 @@ public class Velope {
     private final ProxyServer proxyServer;
     private final Path pluginFolder;
     private ScheduledTask pingerTask;
+    private ScheduledTask failureWiperTask;
 
     @Inject
     public Velope(Logger logger, ProxyServer proxyServer, @DataDirectory Path pluginFolder) {
@@ -135,6 +139,7 @@ public class Velope {
                 injector.getInstance(StatusCommand.class));
 
         pingerTask = setupPingerTask();
+        failureWiperTask = setupFailureWipeTask();
     }
 
     private VelopeConfig loadConfig() throws IOException {
@@ -171,9 +176,14 @@ public class Velope {
 
     public void reload() throws IOException {
         pingerTask.cancel();
+        failureWiperTask.cancel();
         repositorySetup.clear();
         injector.getInstance(ServerStatusRepository.class).deleteAll();
         injector.getInstance(VelopedServerRepository.class).deleteAll();
+
+        RedirectHistoryRepository repository = injector.getInstance(RedirectHistoryRepository.class);
+        repository.cleanFailures();
+        repository.cleanLatestRedirects();
 
         velopeConfig = loadConfig();
         if (velopeConfig == null) {
@@ -190,6 +200,17 @@ public class Velope {
         // Setup repositories
         repositorySetup.setup();
         pingerTask = setupPingerTask();
+        failureWiperTask = setupFailureWipeTask();
+    }
+
+    private ScheduledTask setupFailureWipeTask() {
+        long wiperInterval = Math.max(WIPER_INTERVAL_HARD_MIN,
+                velopeConfig.getVelopeFailureConfig().getFailureCleanInterval());
+
+        return proxyServer.getScheduler()
+                .buildTask(velope, injector.getInstance(FailureHistoryWipeHandler.class))
+                .repeat(wiperInterval, TimeUnit.MILLISECONDS)
+                .schedule();
     }
 
     private ScheduledTask setupPingerTask() {

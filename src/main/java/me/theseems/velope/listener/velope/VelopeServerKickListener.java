@@ -34,18 +34,21 @@ public class VelopeServerKickListener {
     public void onPlayerKick(KickedFromServerEvent event) {
         String currentServerName = event.getServer().getServerInfo().getName();
         Set<String> excluded = new HashSet<>(ConnectionUtils.getExclusionListForPlayer(event.getPlayer()));
+        historyRepository.addFailure(event.getPlayer().getUniqueId(), event.getServer().getServerInfo().getName());
 
         RegisteredServer destination;
         if (currentServerName == null) {
             destination = findWithBalancer(
                     velope.getProxyServer(),
                     serverRepository.getServer(velopeConfig.getRootGroup()),
+                    event.getPlayer().getUniqueId(),
                     excluded);
         } else {
             excluded.add(currentServerName);
 
             destination = findNearestAvailable(
                     velope.getProxyServer(),
+                    event.getPlayer().getUniqueId(),
                     serverRepository.findParent(currentServerName)
                             .map(VelopedServer::getParent)
                             .orElse(null),
@@ -56,6 +59,7 @@ public class VelopeServerKickListener {
                 destination = findWithBalancer(
                         velope.getProxyServer(),
                         serverRepository.getServer(velopeConfig.getRootGroup()),
+                        event.getPlayer().getUniqueId(),
                         excluded);
             }
         }
@@ -69,6 +73,12 @@ public class VelopeServerKickListener {
                 null,
                 destination.getServerInfo().getName()
         ));
+
+        if (historyRepository.getFailures(event.getPlayer().getUniqueId(), destination.getServerInfo().getName())
+                >= velopeConfig.getVelopeFailureConfig().getMaxFailures()) {
+            return;
+        }
+
         event.setResult(KickedFromServerEvent.RedirectPlayer.create(
                 destination,
                 event.getServerKickReason().orElse(Component.empty())));
