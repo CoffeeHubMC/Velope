@@ -24,10 +24,6 @@ public class VelopedServer {
         this.group = group;
     }
 
-    public RegisteredServer getRegisteredServer() {
-        return registeredServer;
-    }
-
     public BalanceStrategy getBalanceStrategy() {
         return balanceStrategy;
     }
