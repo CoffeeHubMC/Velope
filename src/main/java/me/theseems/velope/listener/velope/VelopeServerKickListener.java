@@ -16,7 +16,6 @@ import net.kyori.adventure.text.Component;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 import static me.theseems.velope.utils.ConnectionUtils.findNearestAvailable;
 import static me.theseems.velope.utils.ConnectionUtils.findWithBalancer;
@@ -35,6 +34,7 @@ public class VelopeServerKickListener {
     public void onPlayerKick(KickedFromServerEvent event) {
         String currentServerName = event.getServer().getServerInfo().getName();
         Set<String> excluded = new HashSet<>(ConnectionUtils.getExclusionListForPlayer(event.getPlayer()));
+        historyRepository.addFailure(event.getPlayer().getUniqueId(), event.getServer().getServerInfo().getName());
 
         RegisteredServer destination;
         if (currentServerName == null) {
@@ -74,10 +74,11 @@ public class VelopeServerKickListener {
                 destination.getServerInfo().getName()
         ));
 
-        UUID playerUUID = event.getPlayer().getUniqueId();
-        String serverName = event.getServer().getServerInfo().getName();
+        if (historyRepository.getFailures(event.getPlayer().getUniqueId(), destination.getServerInfo().getName())
+                >= velopeConfig.getVelopeFailureConfig().getMaxFailures()) {
+            return;
+        }
 
-        historyRepository.addFailure(playerUUID, serverName);
         event.setResult(KickedFromServerEvent.RedirectPlayer.create(
                 destination,
                 event.getServerKickReason().orElse(Component.empty())));

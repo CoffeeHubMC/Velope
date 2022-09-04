@@ -10,7 +10,7 @@ public class VelopeFailureConfig {
     private final Long failureCleanInterval;
 
     public VelopeFailureConfig() {
-        this.maxFailures = 10;
-        this.failureCleanInterval = 10_000L;
+        this.maxFailures = 2;
+        this.failureCleanInterval = 45_000L;
     }
 }

@@ -51,7 +51,7 @@ public class ConnectionUtils {
                 .whenCompleteAsync((result, throwable) -> {
                     if (!result.isSuccessful() || throwable != null) {
                         if (result.getStatus() != ConnectionRequestBuilder.Status.ALREADY_CONNECTED
-                        && result.getStatus() != ConnectionRequestBuilder.Status.CONNECTION_IN_PROGRESS) {
+                                && result.getStatus() != ConnectionRequestBuilder.Status.CONNECTION_IN_PROGRESS) {
                             Velope.getHistoryRepository().addFailure(
                                     player.getUniqueId(),
                                     registeredServer.getServerInfo().getName());

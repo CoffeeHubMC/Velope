@@ -19,6 +19,7 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -158,6 +159,16 @@ public class VelopeCommand implements SimpleCommand {
                                 .append(Component.newline())
                                 .append(serializer.deserialize("&8\u22D8 &7To: &e" +
                                         (entry.getTo() == null ? "<void>" : entry.getTo()))));
+
+                Map<String, Long> failureMap = historyRepository.getFailureMap(playerUUID);
+                if (failureMap == null || failureMap.isEmpty()) {
+                    return;
+                }
+
+                source.sendMessage(serializer.deserialize("&7Failed servers:"));
+                failureMap.forEach((s, aLong) -> source.sendMessage(
+                        serializer.deserialize("&e" + s + " &8- &e" + aLong + " &7time(s)")
+                ));
                 break;
 
             default:

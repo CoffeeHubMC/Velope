@@ -2,13 +2,11 @@ package me.theseems.velope.algo;
 
 import com.velocitypowered.api.proxy.server.ServerInfo;
 import me.theseems.velope.Velope;
+import me.theseems.velope.history.RedirectHistoryRepository;
 import me.theseems.velope.server.VelopedServer;
 import me.theseems.velope.status.ServerStatus;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public abstract class SaneBalanceStrategy implements BalanceStrategy.BaseBalanceStrategy {
@@ -23,23 +21,29 @@ public abstract class SaneBalanceStrategy implements BalanceStrategy.BaseBalance
                 .getVelopeFailureConfig()
                 .getMaxFailures();
 
-        List<ServerStatus> saneServers = server.getGroup()
+        RedirectHistoryRepository repository = Velope.getHistoryRepository();
+        Map<Long, Set<ServerStatus>> grouped = server.getGroup()
                 .stream()
                 .map(name -> Velope.getStatusRepository().getStatus(name))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .filter(status -> status.isAvailable() && status.getPlayerCount() + 1 <= status.getMaxPlayerCount())
-                .filter(status -> {
-                    long currentFailures = Velope.getHistoryRepository()
-                            .getFailures(playerUUID, status.getServerInfo().getName());
-                    return currentFailures <= maxFailures;
-                }).collect(Collectors.toList());
+                .filter(status -> repository.getFailures(playerUUID, status.getServerInfo().getName()) <= maxFailures)
+                // Grouping servers base on failure attempts
+                // First of all, we'll try to get server with 0 failures
+                // Then, with 1 failure and on and on.
+                .collect(Collectors.groupingBy(
+                        status -> repository.getFailures(playerUUID, status.getServerInfo().getName()),
+                        Collectors.toSet()));
 
-        if (saneServers.isEmpty()) {
-            return Optional.empty();
+        for (Long failureCount : grouped.keySet()) {
+            Optional<ServerInfo> serverInfo = getSaneOptimalServer(server, grouped.get(failureCount), playerUUID);
+            if (serverInfo.isPresent()) {
+                return serverInfo;
+            }
         }
 
-        return getSaneOptimalServer(server, saneServers, playerUUID);
+        return Optional.empty();
     }
 
     public abstract Optional<ServerInfo> getSaneOptimalServer(VelopedServer server,
