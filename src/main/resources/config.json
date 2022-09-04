@@ -2,6 +2,10 @@
   "integrations": {
     "advancedPortalsSupportEnabled": false
   },
+  "failureSettings": {
+    "maxFailures": 2,
+    "failureCleanInterval": 45000
+  },
   "groups": [
     {
       "name": "hubs",

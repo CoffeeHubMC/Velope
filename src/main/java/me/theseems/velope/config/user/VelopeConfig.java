@@ -15,20 +15,21 @@ public class VelopeConfig {
     private final List<VelopeGroupConfig> groups;
     @SerializedName("pingerSettings")
     private final VelopePingerConfig pingerConfig;
+    @SerializedName("failureSettings")
+    private final VelopeFailureConfig velopeFailureConfig;
     private final String rootGroup;
     private final String initialGroup;
     private final Boolean redirectIfUnknownEnabled;
     private final Boolean fetchOnlineAlternativeEnabled;
-    private final VelopeFailureConfig velopeFailureConfig;
 
     public VelopeConfig() {
         this.integrationsConfig = null;
         this.groups = new ArrayList<>();
         this.pingerConfig = new VelopePingerConfig(10_000L, 10_000L, 10_000L);
+        this.velopeFailureConfig = new VelopeFailureConfig();
         this.rootGroup = null;
         this.initialGroup = null;
         this.redirectIfUnknownEnabled = true;
         this.fetchOnlineAlternativeEnabled = false;
-        this.velopeFailureConfig = new VelopeFailureConfig();
     }
 }
