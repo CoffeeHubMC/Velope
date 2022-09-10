@@ -301,14 +301,16 @@ public class Velope {
                             ));
                 }
 
-                RegisteredServer registeredServer = velope.getProxyServer().registerServer(
-                        new ServerInfo(
-                                group.getName(),
-                                InetSocketAddress.createUnresolved("fake.server.balancer", index++)
-                        )
-                );
-
-                registeredServers.add(registeredServer);
+                RegisteredServer registeredServer = null;
+                if (!group.isOmitFakeServer()) {
+                    registeredServer = velope.getProxyServer().registerServer(
+                            new ServerInfo(
+                                    group.getName(),
+                                    InetSocketAddress.createUnresolved("fake.server.balancer", index++)
+                            )
+                    );
+                    registeredServers.add(registeredServer);
+                }
 
                 VelopedServer server = new VelopedServer(
                         group.getName(),

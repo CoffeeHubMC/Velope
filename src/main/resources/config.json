@@ -9,24 +9,18 @@
   "groups": [
     {
       "name": "hubs",
-      "servers": [
-        "hub0"
-      ],
+      "servers": ["hub0", "hub1"],
       "balanceStrategy": "HIGHEST",
       "command": {
-        "label": "hub",
-        "aliases": [
-          "root"
-        ]
+        "label": "hub"
       }
     },
     {
       "name": "bedwars_lobbies",
-      "servers": [
-        "bwlobby0"
-      ],
+      "servers": ["bwlobby0"],
       "balanceStrategy": "LOWEST",
       "parent": "hubs",
+      "omitFakeServer": true,
       "command": {
         "label": "bedwars",
         "aliases": [

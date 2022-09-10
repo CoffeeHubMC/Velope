@@ -14,4 +14,5 @@ public class VelopeGroupConfig {
     private final BalanceStrategy balanceStrategy;
     private final String parent;
     private final VelopeCommandConfig command;
+    private final boolean omitFakeServer;
 }
