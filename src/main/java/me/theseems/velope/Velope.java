@@ -77,6 +77,8 @@ public class Velope {
 
     private static final long WIPER_INTERVAL_HARD_MIN = 15000L;
 
+    public static final String TELEPORT_PLAYERS_PERMISSION = "velope.teleportplayers";
+
     private static Velope velope;
     private static Injector injector;
     private static VelopeConfig velopeConfig;
@@ -383,8 +385,11 @@ public class Velope {
                         .build();
 
                 SimpleCommand command = invocation -> {
-                    if (!(invocation.source() instanceof Player)) {
-                        invocation.source().sendMessage(Component.text("This game is only for ingame use."));
+
+                    String[] args = invocation.arguments();
+
+                    if (!(invocation.source() instanceof Player) && args.length == 0) {
+                        invocation.source().sendMessage(Component.text("Specify which player you want to affect"));
                         return;
                     }
                     if (config.getPermission() != null && !invocation.source().hasPermission(config.getPermission())) {
@@ -393,8 +398,26 @@ public class Velope {
                                 .color(NamedTextColor.RED));
                         return;
                     }
+                    Player player;
 
-                    Player player = (Player) invocation.source();
+                    if (args.length != 0) {
+                        if (!invocation.source().hasPermission(TELEPORT_PLAYERS_PERMISSION)) {
+                            invocation.source().sendMessage(Component
+                                    .text("You don't have permission to use this command with arguments")
+                                    .color(NamedTextColor.RED));
+                            return;
+                        }
+                        try {
+                            player = velope.getProxyServer().getPlayer(args[0]).get();
+                        } catch (Exception e) {
+                            invocation.source().sendMessage(Component
+                                    .text("Couldn't find that player")
+                                    .color(NamedTextColor.RED));
+                            return;
+                        }
+                    } else {
+                        player = (Player) invocation.source();
+                    }
                     Optional<VelopedServer> currentServer = player
                             .getCurrentServer()
                             .map(ServerConnection::getServer)
